@@ -1,0 +1,4 @@
+*.original.html
+painel_compras*.html
+.vercel
+senha*.txt
