@@ -1,4 +1,12 @@
-*.original.html
+# Dados de compras e segredos NUNCA entram no Git
 painel_compras*.html
-.vercel
+*.original.html
+*.xls
+*.xlsx
+*.csv
+*.txt
+*.json
+.env
+.env.*
 senha*.txt
+.vercel

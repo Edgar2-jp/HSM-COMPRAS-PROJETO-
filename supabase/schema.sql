@@ -1,35 +1,47 @@
--- Esquema do Painel de Compras (já aplicado no projeto hsm-compras).
-create table if not exists public.fornecedores (id int primary key, nome text not null);
-create table if not exists public.itens (id int primary key, nome text not null);
-create table if not exists public.produtos (id int primary key, nome text not null);
-create table if not exists public.categorias (id int primary key, nome text not null);
-create table if not exists public.unidades (id int primary key, nome text not null);
-create table if not exists public.compras (
-  id bigserial primary key,
-  cod_item bigint, nota bigint, data date not null,
-  fornecedor_id int references public.fornecedores(id),
-  item_id int references public.itens(id),
-  produto_id int references public.produtos(id),
-  categoria_id int references public.categorias(id),
-  unidade_id int references public.unidades(id),
-  quantidade int, valor numeric(14,2), valor_item numeric(14,4), valor_negociado numeric(14,2),
-  sistema text check (sistema in ('Compras','Emenda'))
+-- Esquema do Painel de Compras: um registro por lote, RLS em tudo.
+-- Leitura: só usuários logados (authenticated). Escrita: só quem está em public.admins.
+-- Não mexe nas tabelas consumo_* (outro uso do projeto).
+
+drop table if exists public.compras, public.ordens, public.consumo,
+  public.fornecedores, public.itens, public.produtos, public.categorias, public.unidades cascade;
+
+create table if not exists public.admins (
+  user_id uuid primary key references auth.users(id) on delete cascade
 );
-create index if not exists compras_data_idx on public.compras (data);
-create index if not exists compras_fornecedor_idx on public.compras (fornecedor_id);
-create index if not exists compras_item_idx on public.compras (item_id);
-create table if not exists public.ordens (
-  id bigserial primary key, ordem bigint, data date not null, fornecedor text, valor numeric(14,2), situacao text
+alter table public.admins enable row level security;
+
+create or replace function public.is_admin() returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.admins where user_id = (select auth.uid()));
+$$;
+revoke all on function public.is_admin() from public, anon;
+grant execute on function public.is_admin() to authenticated;
+
+create table if not exists public.lotes (
+  id       bigint generated always as identity primary key,
+  dataset  text not null check (dataset in ('itens','ordens','consumo')),
+  origin   text not null check (origin in ('hist','mensal','consolidado')),
+  tipo     text not null,
+  filename text not null,
+  added_at timestamptz not null default now(),
+  rows     integer not null default 0,
+  periodo  text,
+  min_day  integer,
+  max_day  integer,
+  payload  jsonb not null
 );
-create table if not exists public.consumo (
-  id bigserial primary key, item text, marcas jsonb, tipo text, quantidade numeric,
-  periodo_min text, periodo_max text, extra jsonb, mensal jsonb
-);
-alter table public.fornecedores enable row level security;
-alter table public.itens enable row level security;
-alter table public.produtos enable row level security;
-alter table public.categorias enable row level security;
-alter table public.unidades enable row level security;
-alter table public.compras enable row level security;
-alter table public.ordens enable row level security;
-alter table public.consumo enable row level security;
+-- torna a migração idempotente (upsert por nome) sem proibir reenvios mensais com o mesmo nome
+create unique index if not exists lotes_hist_uq on public.lotes (dataset, filename) where origin = 'hist';
+alter table public.lotes enable row level security;
+
+revoke all on public.lotes, public.admins from anon, public;
+grant select on public.lotes to authenticated;
+grant insert, update, delete on public.lotes to authenticated;
+grant select on public.admins to authenticated;
+
+create policy lotes_select on public.lotes for select to authenticated using (true);
+create policy lotes_insert on public.lotes for insert to authenticated with check ((select public.is_admin()));
+create policy lotes_update on public.lotes for update to authenticated
+  using ((select public.is_admin())) with check ((select public.is_admin()));
+create policy lotes_delete on public.lotes for delete to authenticated using ((select public.is_admin()));
+create policy admins_self on public.admins for select to authenticated using (user_id = (select auth.uid()));
