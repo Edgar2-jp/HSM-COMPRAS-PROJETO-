@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Painel de Compras</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -390,6 +390,73 @@ tr:hover .pct-badge, tr:hover .tag{ transform:scale(1.06); }
 /* quem prefere menos movimento */
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
+}
+/* ============================================================
+   RESPONSIVIDADE — celular, tablet e telas de toque
+   ============================================================ */
+.grid > *, .kpis > *, .panel, .chart-wrap{ min-width:0; }
+.chart-wrap canvas{ max-width:100%; }
+.main, .content{ min-width:0; max-width:100%; }
+.tabela-toolbar{ flex-wrap:wrap; gap:8px; }
+.table-scroll, .panel > div[id$="Content"]{ -webkit-overflow-scrolling:touch; }
+
+@media (max-width:860px){
+  .topbar{ position:static; gap:10px; }              /* filtros deixam de ocupar a tela inteira ao rolar */
+  .topbar h2{ flex:1 1 100%; font-size:19px; margin-right:0; }
+  .filters{ width:100%; gap:8px; }
+  .date-range{ flex:1 1 100%; flex-wrap:wrap; gap:8px; }
+  .date-range label{ flex:1 1 140px; }
+  .date-range input[type=date]{ width:100%; min-width:0; }
+  .quick-chips{ flex:1 1 100%; }
+  .quick-chips button{ flex:1; text-align:center; }
+  .filter-group{ flex:1 1 calc(50% - 8px); }
+  .filter-btn{ width:100%; justify-content:space-between; }
+  .filter-panel{ min-width:min(260px, calc(100vw - 28px)); }
+  .filters > .btn{ flex:1 1 calc(50% - 8px); }
+  table.alerts, table.batches{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table.alerts th, table.alerts td, table.batches th, table.batches td{ white-space:nowrap; }
+  .panel{ padding:14px 14px 10px; }
+  .panel h3{ font-size:15.5px; }
+  .search-box input{ max-width:none; }
+  .search-summary{ gap:8px 18px; }
+  .credit-tag{ position:static; display:block; width:max-content; margin:0 14px 16px auto; }
+  .toast{ left:12px; right:12px; bottom:calc(14px + env(safe-area-inset-bottom)); max-width:none; }
+  input, select, textarea{ font-size:16px; }          /* evita o zoom automático do iOS ao focar */
+  .ov-card{ padding:24px 20px; }
+}
+@media (max-width:600px){
+  .chart-wrap{ height:280px; }
+  .chart-wrap.tall{ height:330px; }
+  .kpi .value{ font-size:24px; }
+  .kpi{ padding:12px 14px; }
+  .content{ padding:14px 12px 40px; }
+  .pagination{ flex-wrap:wrap; }
+  .upload-zone{ padding:20px 14px; }
+  .type-toggle{ flex-wrap:wrap; }
+  table.detail{ font-size:13px; }
+  table.detail th, table.detail td{ padding:8px 8px; }
+}
+@media (max-width:380px){
+  .filter-group, .filters > .btn{ flex:1 1 100%; }
+  .brand h1{ font-size:14px; }
+}
+
+/* telas de toque: alvos de 44px e sem efeitos que só existem com mouse */
+@media (pointer:coarse){
+  .btn, .filter-btn, .quick-chips button, .pagination button, .type-toggle button{ min-height:44px; }
+  .nav button{ min-height:44px; }
+  .btn[style*="padding:4px"], .btn[style*="padding:6px"]{ min-height:40px; }
+  input[type=date], .search-box input{ min-height:44px; }
+}
+@media (hover:none){
+  .kpi:hover, .panel:hover, .upload-zone:hover, .brand:hover .brand-logo{ transform:none; }
+  .nav button:hover{ padding-left:14px; }
+  .btn:not(:disabled):hover{ transform:none; box-shadow:none; }
+}
+
+/* notch / barra de gestos */
+@supports (padding:max(0px)){
+  .sidebar{ padding-left:max(12px, env(safe-area-inset-left)); padding-right:max(12px, env(safe-area-inset-right)); }
 }
 </style>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://ioephnjmzwlypnvbtlpl.supabase.co; worker-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
