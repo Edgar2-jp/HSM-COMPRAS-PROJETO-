@@ -1,18 +1,29 @@
-# HSM-COMPRAS-PROJETO-
+# Painel de Compras — Hospital São Marcos
 
-Painel de análise de compras (arquivo único HTML), publicado via GitHub Pages.
+Arquivo único (`index.html`, JS puro, sem build) publicado no GitHub Pages. Os dados ficam no **Supabase**
+(tabela `lotes`); todos que entram veem o mesmo histórico. Login obrigatório; só admins enviam/removem lotes.
+A segurança é feita pela **RLS do banco** — a tela só esconde botões por conveniência.
 
-## Segurança
-- Os dados embutidos (fornecedores, ordens, consumo) ficam **cifrados** (AES-256-GCM, chave derivada da senha com PBKDF2-SHA256, 600 mil iterações) e só são decifrados no navegador após a senha correta.
-- Este repositório é público: o arquivo cifrado pode ser baixado por qualquer pessoa, então a segurança depende de uma **senha longa e aleatória**. Nunca versione o HTML original sem criptografia (`.gitignore` já bloqueia).
+## Subir um lote novo (admin)
+Entre no painel → aba **Dados** → arraste o arquivo do mês (bruto Compras/Emenda, base consolidada ou consumo `.txt`).
+Para remover: **Remover** → **Confirmar remoção?** (2 cliques). Outros usuários veem a mudança ao reabrir/voltar à aba.
 
-## Estrutura
-- `index.html`: painel protegido (gerado)
-- `build.py`: gera o `index.html` cifrado a partir do HTML original
-- `DEPLOY.md`: instruções de regeneração e deploy
-- `vercel.json`: cabeçalhos de segurança (apenas se usar Vercel)
+## Liberar / bloquear um e-mail
+1. Supabase → Authentication → Users → **Add user / Invite** (marque *Auto Confirm*). A pessoa usa
+   "Primeiro acesso / esqueci a senha" na tela de login para definir a senha.
+2. No SQL Editor: `insert into public.leitores values ('pessoa@exemplo.com');`
+   (admin: também `insert into public.admins values ('pessoa@exemplo.com');`).
+3. Bloquear: `delete from public.leitores where email = '...';` (e de `admins`, se for o caso).
+E-mails sempre em minúsculas. Recomendado: Authentication → Sign In → **desligar "Allow new users to sign up"**.
 
-## Regenerar
+## Migração inicial dos dados (uma vez, no seu computador)
+O HTML antigo com os dados **nunca** vai para o Git (está no `.gitignore`).
 ```
-PAINEL_SENHA='sua senha longa' python3 build.py painel_compras_10.html index.html
+python3 supabase/migrar.py painel_compras.html --dry-run       # confere totais
+SUPABASE_ADMIN_EMAIL=voce@exemplo.com python3 supabase/migrar.py painel_compras.html
 ```
+Usa o login do admin com a chave pública — não precisa de `service_role` (que **nunca** deve entrar no repo).
+
+## Publicação
+Settings → Pages → *Deploy from a branch* → `main` / `(root)`. O workflow `keepalive` faz um ping a cada 3 dias
+para o Supabase grátis não pausar por inatividade. Se pausar: painel do Supabase → **Restore project**.
