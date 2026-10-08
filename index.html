@@ -1,0 +1,2918 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Compras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F1F0;
+  --surface:#FFFFFF;
+  --ink:#241615;
+  --ink-soft:#6B4E4C;
+  --ink-faint:#A08886;
+  --line:#E9D9D7;
+  --line-soft:#F2E7E5;
+  --teal:#A32B24;
+  --teal-dark:#6E1B16;
+  --teal-pale:#F5E2E0;
+  --gold:#B5551E;
+  --gold-pale:#F7E7DA;
+  --rose:#9E4A3E;
+  --shadow: 0 1px 2px rgba(36,22,21,0.06), 0 1px 1px rgba(36,22,21,0.04);
+  --shadow-hover: 0 6px 18px rgba(36,22,21,0.10), 0 2px 6px rgba(36,22,21,0.06);
+  --radius: 5px;
+  --cat-medicamento:#A32B24;
+  --cat-material:#8A4A2C;
+  --cat-manutencao:#B5551E;
+  --cat-alimentos:#C2681E;
+  --cat-limpeza:#6B5B3A;
+  --cat-expediente:#7A3B4A;
+  --cat-outros:#8B7B78;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:15.5px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+h1,h2,h3,.num-display{ font-family:'Newsreader', Georgia, serif; font-variant-numeric:tabular-nums; }
+::selection{ background:var(--teal-pale); color:var(--teal-dark); }
+.app{ display:flex; min-height:100vh; }
+
+/* ---- Sidebar ---- */
+.sidebar{
+  width:212px; flex:0 0 212px;
+  background:var(--teal-dark);
+  color:#F3E3E1;
+  padding:22px 16px;
+  display:flex; flex-direction:column;
+  position:sticky; top:0; height:100vh;
+}
+.brand{ margin-bottom:28px; }
+.brand-logo{ width:46px; height:auto; display:block; margin-bottom:8px; }
+.brand .kicker{ font-size:11px; letter-spacing:.06em; color:#D9A9A3; margin-bottom:2px; font-weight:600; }
+.brand h1{ font-size:24px; font-weight:600; margin:0; color:#fff; line-height:1.15; }
+.brand-sub{ font-size:12px; color:#E7C9C5; margin-top:4px; font-weight:500; }
+.nav{ display:flex; flex-direction:column; gap:2px; margin-top:6px; }
+.nav button{
+  all:unset; cursor:pointer; position:relative;
+  padding:10px 11px 10px 14px; border-radius:var(--radius);
+  color:#E7C9C5; font-size:14.5px; font-weight:500;
+  display:flex; align-items:center; gap:9px;
+  transition:background .12s ease, color .12s ease;
+}
+.nav button svg{ width:15px; height:15px; flex:0 0 auto; opacity:.85;}
+.nav button:hover{ background:rgba(255,255,255,0.08); color:#fff; }
+.nav button.active{ background:var(--teal-pale); color:var(--teal-dark); font-weight:600; }
+.nav button.active::before{ content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; border-radius:2px; background:var(--teal-dark); }
+.nav button.active svg{ opacity:1; }
+.sidebar-foot{ margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,0.14); font-size:11.5px; color:#CFA29C; }
+.sidebar-foot b{ color:#F3DAD7; display:block; margin-bottom:2px; font-weight:600;}
+
+/* ---- Responsivo (celular/tela estreita): barra lateral vira menu horizontal no topo ---- */
+@media (max-width: 860px){
+  .app{ flex-direction:column; }
+  .sidebar{
+    width:100%; flex:none; height:auto; position:sticky; top:0; z-index:30;
+    flex-direction:row; align-items:center; padding:10px 12px; gap:14px;
+  }
+  .brand{ margin-bottom:0; display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+  .brand-logo{ width:28px; margin-bottom:0; }
+  .brand .kicker{ display:none; }
+  .brand h1{ font-size:15px; white-space:nowrap; }
+  .brand-sub{ display:none; }
+  .brand h1 br{ display:none; }
+  .nav{ flex-direction:row; gap:4px; margin-top:0; overflow-x:auto; -webkit-overflow-scrolling:touch; flex:1 1 auto; }
+  .nav button{ flex:0 0 auto; white-space:nowrap; padding:8px 10px; font-size:12.5px; }
+  .nav button.active::before{ left:4px; right:4px; top:auto; bottom:0; height:3px; width:auto; }
+  .sidebar-foot{ display:none; }
+  .content{ padding:16px 14px 50px; }
+  .topbar{ padding:12px 14px; }
+  .kpis{ grid-template-columns:1fr 1fr; }
+  .grid{ grid-template-columns:1fr; }
+}
+@media (max-width: 480px){
+  .kpis{ grid-template-columns:1fr; }
+}
+
+/* ---- Main ---- */
+.main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.topbar{
+  background:var(--surface); border-bottom:1px solid var(--line);
+  padding:14px 26px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  position:sticky; top:0; z-index:20;
+  box-shadow:0 2px 6px rgba(36,22,21,0.04);
+}
+.topbar h2{ font-size:21px; margin:0; font-weight:600; margin-right:auto; }
+.filters{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.filter-group{ position:relative; }
+.filter-btn{
+  border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  border-radius:var(--radius); padding:7px 11px; font-size:12.5px; font-weight:500;
+  cursor:pointer; display:flex; align-items:center; gap:6px; min-width:88px;
+}
+.filter-btn:hover{ border-color:var(--teal); }
+.filter-btn .count{ background:var(--teal-pale); color:var(--teal-dark); border-radius:8px; padding:1px 6px; font-size:10.5px; font-weight:700;}
+.filter-panel{
+  display:none; position:absolute; top:calc(100% + 6px); left:0; background:var(--surface);
+  border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 6px 18px rgba(21,34,39,0.12);
+  padding:10px; z-index:30; min-width:210px; max-height:280px; overflow:auto;
+}
+.filter-panel.open{ display:block; }
+.filter-panel label{ display:flex; align-items:center; gap:7px; padding:4px 2px; font-size:12.5px; cursor:pointer; }
+.filter-panel .fp-actions{ display:flex; justify-content:space-between; margin-top:6px; padding-top:6px; border-top:1px solid var(--line-soft); }
+.fp-actions a{ font-size:11.5px; color:var(--teal-dark); cursor:pointer; text-decoration:underline; }
+.btn{
+  border:1px solid var(--teal); background:var(--teal); color:#fff;
+  border-radius:var(--radius); padding:8px 14px; font-size:12.5px; font-weight:600;
+  cursor:pointer;
+}
+.btn:hover{ background:var(--teal-dark); border-color:var(--teal-dark); }
+.btn.secondary{ background:var(--surface); color:var(--ink); border-color:var(--line); }
+.btn.secondary:hover{ border-color:var(--ink-soft); }
+.btn.danger{ background:var(--surface); color:var(--rose); border-color:#E3CBC6; }
+.btn.danger:hover{ background:#FBF1EF; }
+.btn:disabled{ opacity:.45; cursor:default; }
+.date-range{ display:flex; gap:10px; align-items:center; }
+.date-range label{ font-size:11.5px; color:var(--ink-soft); font-weight:600; display:flex; align-items:center; gap:5px; }
+.date-range input[type=date]{ border:1px solid var(--line); border-radius:var(--radius); padding:6px 8px; font-size:12px; font-family:'Inter'; color:var(--ink); background:var(--surface); }
+.quick-chips{ display:flex; gap:6px; }
+.quick-chips button{ all:unset; cursor:pointer; padding:6px 10px; border-radius:12px; border:1px solid var(--line); font-size:11.5px; font-weight:600; color:var(--ink-soft); }
+.quick-chips button:hover, .quick-chips button.sel{ background:var(--teal-pale); color:var(--teal-dark); border-color:var(--teal); }
+.tabela-toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:12.5px; color:var(--ink-soft); }
+.search-summary{ display:flex; flex-wrap:wrap; gap:10px; background:var(--teal-pale); border:1px solid #E3B0AA; border-radius:var(--radius); padding:10px 14px; margin-bottom:12px; }
+.search-summary .item{ font-size:12.5px; color:var(--ink); }
+.search-summary .item b{ display:block; font-size:15px; font-family:'Newsreader',serif; }
+.pagination{ display:flex; gap:8px; align-items:center; }
+.pagination button{ all:unset; cursor:pointer; padding:5px 10px; border:1px solid var(--line); border-radius:var(--radius); font-size:12px; font-weight:600; color:var(--ink); }
+.pagination button:disabled{ opacity:.4; cursor:default; }
+table.detail{ width:100%; border-collapse:collapse; font-size:13.5px; }
+table.detail th{ text-align:left; padding:9px 10px; color:var(--ink-soft); font-weight:700; border-bottom:2px solid var(--line); position:sticky; top:0; background:var(--surface); }
+table.detail td{ padding:8px 10px; border-bottom:1px solid var(--line-soft); }
+table.detail tbody tr:hover{ background:var(--teal-pale); }
+.table-scroll{ max-height:560px; overflow:auto; border:1px solid var(--line); border-radius:var(--radius); }
+
+.content{ padding:22px 26px 60px; flex:1; }
+.view{ display:none; }
+.view.active{ display:block; }
+
+.kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:18px; }
+.kpi{
+  background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--teal);
+  border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow);
+  transition:box-shadow .15s ease, transform .15s ease;
+}
+.kpi:hover{ box-shadow:var(--shadow-hover); transform:translateY(-1px); }
+.kpi.gold{ border-left-color:var(--gold); }
+.kpi .label{ font-size:12.5px; color:var(--ink-soft); font-weight:600; text-transform:none; margin-bottom:6px; }
+.kpi .value{ font-size:27px; font-weight:600; line-height:1.15; }
+.kpi .sub{ font-size:11.5px; color:var(--ink-faint); margin-top:4px; }
+.delta-badge{ display:inline-block; font-size:10.5px; font-weight:700; margin-top:6px; padding:2px 7px; border-radius:9px; }
+.delta-badge.up{ background:#F5E2E0; color:var(--teal-dark); }
+.delta-badge.down{ background:#EAF0E8; color:#3E5A34; }
+.delta-badge.neutral{ background:var(--line-soft); color:var(--ink-faint); font-weight:600; }
+.kpi-flag{ font-size:11px; color:var(--ink-faint); margin-top:2px; }
+.dq-note{ font-size:11.5px; color:var(--ink-soft); background:var(--line-soft); border-left:3px solid var(--gold); border-radius:2px; padding:8px 12px; margin-top:10px; }
+.search-box{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.search-box input{ flex:1; max-width:320px; border:1px solid var(--line); border-radius:var(--radius); padding:7px 10px; font-size:12.5px; font-family:'Inter'; }
+table.alerts{ width:100%; border-collapse:collapse; font-size:13.5px; }
+table.alerts th{ text-align:left; padding:8px 10px; color:var(--ink-soft); font-weight:700; border-bottom:1px solid var(--line); }
+table.alerts td{ padding:9px 10px; border-bottom:1px solid var(--line-soft); }
+table.alerts tr:last-child td{ border-bottom:none; }
+.pct-badge{ display:inline-block; padding:2px 9px; border-radius:10px; font-size:11.5px; font-weight:700; background:var(--gold-pale); color:var(--gold); }
+.unit-warning{ font-size:10.5px; font-weight:700; color:var(--gold); margin-top:2px; cursor:help; }
+.val-tip{ position:relative; cursor:help; border-bottom:1px dotted var(--ink-faint); }
+.val-tip:hover::after{
+  content: attr(data-tip);
+  position:absolute; bottom:135%; left:0; transform:translateX(-10%);
+  background:#201312; color:#fff; padding:6px 10px; border-radius:4px; font-size:11.5px; font-weight:600;
+  white-space:nowrap; z-index:80; box-shadow:0 6px 16px rgba(0,0,0,.28); pointer-events:none;
+}
+.val-tip:hover::before{
+  content:''; position:absolute; bottom:112%; left:10%; transform:translateX(-50%);
+  border:5px solid transparent; border-top-color:#201312; z-index:80; pointer-events:none;
+}
+.alerts-empty{ text-align:center; padding:26px 10px; color:var(--ink-faint); font-size:12.5px; }
+
+.grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+.grid.grid-3{ grid-template-columns:repeat(3,1fr); }
+@media (max-width:760px){ .grid.grid-3{ grid-template-columns:1fr; } }
+.grid .span2{ grid-column:1 / -1; }
+@media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
+
+.panel{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px 12px; box-shadow:var(--shadow);
+  transition:box-shadow .15s ease;
+}
+.panel:hover{ box-shadow:var(--shadow-hover); }
+.panel h3{ font-size:16.5px; font-weight:600; margin:0 0 12px; color:var(--ink); padding-bottom:10px; border-bottom:1px solid var(--line-soft); }
+.panel h3 .muted{ font-weight:400; color:var(--ink-faint); font-size:12px; }
+.chart-wrap{ position:relative; height:340px; }
+.chart-wrap.tall{ height:400px; }
+
+.empty{ text-align:center; padding:70px 20px; color:var(--ink-soft); }
+.empty h2{ font-size:20px; margin-bottom:8px; color:var(--ink); }
+.empty p{ max-width:420px; margin:0 auto 18px; font-size:13.5px; }
+
+/* ---- Dados view ---- */
+.upload-zone{
+  border:1.5px dashed var(--line); border-radius:var(--radius); padding:26px;
+  text-align:center; background:var(--surface); cursor:pointer; transition:border-color .12s;
+}
+.upload-zone:hover, .upload-zone.drag{ border-color:var(--teal); background:var(--teal-pale); }
+.upload-zone h4{ margin:0 0 4px; font-size:14.5px; font-weight:600; }
+.upload-zone p{ margin:0; font-size:12.5px; color:var(--ink-soft); }
+.type-toggle{ display:flex; gap:8px; justify-content:center; margin-top:14px; }
+.type-toggle button{
+  all:unset; cursor:pointer; padding:7px 16px; border-radius:var(--radius); border:1px solid var(--line);
+  font-size:12.5px; font-weight:600; color:var(--ink-soft);
+}
+.type-toggle button.sel{ background:var(--teal); color:#fff; border-color:var(--teal); }
+
+table.batches{ width:100%; border-collapse:collapse; font-size:13.5px; }
+table.batches th{ text-align:left; padding:8px 10px; color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--line); }
+table.batches td{ padding:9px 10px; border-bottom:1px solid var(--line-soft); }
+table.batches tr:last-child td{ border-bottom:none; }
+.tag{ display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+.tag.compras{ background:var(--teal-pale); color:var(--teal-dark); }
+.tag.emenda{ background:var(--gold-pale); color:var(--gold); }
+.tag.hist{ background:#EDEDEA; color:#63635C; }
+
+.toast{
+  position:fixed; bottom:22px; right:22px; background:var(--ink); color:#fff; padding:12px 18px;
+  border-radius:var(--radius); font-size:12.5px; box-shadow:0 8px 24px rgba(0,0,0,.2); z-index:100;
+  max-width:340px; opacity:0; transform:translateY(8px); transition:opacity .2s, transform .2s;
+}
+.toast.show{ opacity:1; transform:translateY(0); }
+.toast.err{ background:#7A2E24; }
+
+.section-note{ font-size:12px; color:var(--ink-soft); background:var(--teal-pale); border:1px solid #CFE3E0; border-radius:var(--radius); padding:10px 13px; margin-bottom:16px; }
+.cat-legend{ display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; font-size:11.5px; color:var(--ink-soft); }
+.cat-legend span{ display:inline-flex; align-items:center; gap:5px; }
+.cat-legend i{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+.spinner{ display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.hint{ font-size:11.5px; color:var(--ink-faint); margin-top:10px; }
+.detail-list{ font-size:12.5px; }
+.detail-list li{ margin-bottom:4px; }
+.credit-tag{ position:fixed; bottom:8px; right:14px; font-size:10.5px; font-weight:700; color:var(--teal); background:var(--surface); padding:3px 9px; border-radius:10px; border:1px solid var(--line); z-index:60; letter-spacing:.01em; }
+.ov{ position:fixed; inset:0; z-index:9999; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:16px; }
+.ov-card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:28px 26px; width:100%; max-width:380px; box-shadow:0 8px 30px rgba(0,0,0,.08); }
+.ov-card h2{ margin:2px 0 18px; font-size:22px; color:var(--ink); }
+.ov-card form{ display:flex; flex-direction:column; gap:12px; }
+.ov-card label{ display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-soft); }
+.ov-card input{ padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; }
+.ov-card a{ font-size:12px; color:var(--rose); text-align:center; }
+.ov-msg{ margin-top:12px; font-size:13px; color:var(--rose); line-height:1.45; }
+.admin-only{ display:none !important; }
+body.is-admin .admin-only{ display:revert !important; }
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+<div id="loginOverlay" class="ov" style="display:none;">
+  <div class="ov-card">
+    <div class="kicker">HOSPITAL SÃO MARCOS</div>
+    <h2>Painel de Compras</h2>
+    <form id="loginForm">
+      <label>E-mail<input type="email" id="loginEmail" autocomplete="username" required></label>
+      <label>Senha<input type="password" id="loginPass" autocomplete="current-password" required></label>
+      <button class="btn" type="submit">Entrar</button>
+      <a href="#" id="linkForgot">Primeiro acesso / esqueci a senha</a>
+    </form>
+    <form id="recoverForm" style="display:none;">
+      <label>E-mail liberado<input type="email" id="recoverEmail" required></label>
+      <button class="btn" type="submit">Enviar link para definir senha</button>
+      <a href="#" id="linkBack">Voltar</a>
+    </form>
+    <form id="newPassForm" style="display:none;">
+      <label>Nova senha (mín. 8 caracteres)<input type="password" id="newPass" autocomplete="new-password" required></label>
+      <button class="btn" type="submit">Salvar senha</button>
+    </form>
+    <div id="loginMsg" class="ov-msg"></div>
+  </div>
+</div>
+<div id="statusOverlay" class="ov" style="display:flex;">
+  <div class="ov-card">
+    <div class="kicker">HOSPITAL SÃO MARCOS</div>
+    <h2>Painel de Compras</h2>
+    <div id="statusText" class="ov-msg" style="color:var(--ink);">Carregando…</div>
+    <button class="btn" id="statusRetry" style="display:none;margin-top:12px;">Tentar novamente</button>
+  </div>
+</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <img class="brand-logo" src="data:image/png;base64,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" alt="Hospital São Marcos">
+      <div class="kicker">HOSPITAL</div>
+      <h1>São Marcos</h1>
+      <div class="brand-sub">Painel de Compras</div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-view="geral" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Visão Geral</button>
+      <button data-view="analise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="20" y1="20" x2="20" y2="14"/></svg>Análise Mensal</button>
+      <button data-view="fornecedores"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/></svg>Fornecedores</button>
+      <button data-view="insumos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Insumos</button>
+      <button data-view="tabela"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="10" x2="9" y2="20"/></svg>Tabela Detalhada</button>
+      <button data-view="consumo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 3 5-6"/></svg>Controle de Consumo</button>
+      <button data-view="dados"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 8H18a4 4 0 0 1 0 8h-1"/><polyline points="12 12 12 21"/><polyline points="9 15 12 12 15 15"/></svg>Dados &amp; Upload</button>
+    </nav>
+    <div class="sidebar-foot">
+      <b id="periodoLabel">—</b>
+      <span id="totalRowsLabel">0 registros</span>
+      <span id="userLabel" style="display:block;margin-top:8px;word-break:break-all;"></span>
+      <button class="btn secondary" id="btnLogout" style="display:none;margin-top:6px;padding:4px 10px;font-size:11px;">Sair</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h2 id="viewTitle">Visão Geral</h2>
+      <div class="filters">
+        <div class="date-range">
+          <label>De <input type="date" id="filterDateFrom"></label>
+          <label>Até <input type="date" id="filterDateTo"></label>
+        </div>
+        <div class="quick-chips" id="quickChips"></div>
+        <div class="filter-group" data-filter="cat">
+          <button class="filter-btn">Categoria <span class="count" id="cnt-cat"></span></button>
+          <div class="filter-panel" id="panel-cat"></div>
+        </div>
+        <div class="filter-group" data-filter="sis">
+          <button class="filter-btn">Origem <span class="count" id="cnt-sis"></span></button>
+          <div class="filter-panel" id="panel-sis"></div>
+        </div>
+        <button class="btn secondary" id="btnExportXlsx">Exportar Excel</button>
+        <button class="btn secondary" id="btnExportPdf">Exportar PDF</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="view active" id="view-geral">
+        <div class="kpis">
+          <div class="kpi"><div class="label">Compras</div><div class="value num-display" id="kpiCompras">—</div><div class="kpi-flag">valor consolidado do período</div><div id="kpiComprasDelta"></div></div>
+          <div class="kpi gold"><div class="label">Emenda após a atualização do sistema</div><div class="value num-display" id="kpiEmendaNova">—</div><div class="kpi-flag">valor segregado, a partir de set/2026</div></div>
+          <div class="kpi"><div class="label">Desconto aplicado em nota</div><div class="value num-display" id="kpiEconomia">—</div><div class="kpi-flag" id="kpiEconomiaPct"></div></div>
+          <div class="kpi" style="border-left-color:var(--ink);"><div class="label">Total Geral <span class="muted">(Compras + Emenda pós-atualização)</span></div><div class="value num-display" id="kpiTotalGeralNovo">—</div></div>
+        </div>
+        <div class="kpis" style="margin-top:-4px;">
+          <div class="kpi"><div class="label">Notas / lançamentos</div><div class="value num-display" id="kpiLancamentos">—</div></div>
+          <div class="kpi"><div class="label">Ticket médio por nota</div><div class="value num-display" id="kpiTicketMedio">—</div></div>
+          <div class="kpi" style="opacity:.85;"><div class="label">Emenda antes da atualização do sistema</div><div class="value num-display" id="kpiEmenda">—</div><div class="kpi-flag">apenas para consulta — valor congelado, fora de qualquer soma</div><div id="kpiEmendaDelta"></div></div>
+        </div>
+        <div class="grid">
+          <div class="panel"><h3>Gasto por categoria</h3><div class="chart-wrap"><canvas id="chartCategoriaDonut"></canvas></div></div>
+          <div class="panel"><h3>Compras × Emenda <span class="muted">(pós-atualização — comparativo de escala)</span></h3><div class="chart-wrap"><canvas id="chartOrigemPie"></canvas></div></div>
+          <div class="panel span2"><h3>Top 10 insumos <span class="muted">(por valor gasto)</span></h3><div class="chart-wrap"><canvas id="chartTopInsumosGeral"></canvas></div>
+            <div class="dq-note" id="dqNote" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-analise">
+        <div class="kpis">
+          <div class="kpi"><div class="label" id="mediaLabel1">Média mensal —</div><div class="value num-display" id="kpiMedia1">—</div></div>
+          <div class="kpi"><div class="label" id="mediaLabel2">Média mensal —</div><div class="value num-display" id="kpiMedia2">—</div></div>
+          <div class="kpi"><div class="label">Mês de maior gasto</div><div class="value num-display" id="kpiMesPico">—</div></div>
+          <div class="kpi gold"><div class="label">Emenda no período</div><div class="value num-display" id="kpiEmendaPeriodo">—</div></div>
+          <div class="kpi"><div class="label">Projeção próximo mês <span class="muted">(compras)</span></div><div class="value num-display" id="kpiProjecao">—</div><div class="kpi-flag">média dos últimos 3 meses</div></div>
+        </div>
+        <div class="grid">
+          <div class="panel span2"><h3>Evolução mensal — Compras</h3><div class="chart-wrap tall"><canvas id="chartEvolucaoCompras"></canvas></div></div>
+          <div class="panel span2"><h3>Evolução mensal — Emenda</h3><div class="chart-wrap"><canvas id="chartEvolucaoEmenda"></canvas></div></div>
+        </div>
+      </div>
+
+      <div class="view" id="view-fornecedores">
+        <div class="kpis">
+          <div class="kpi"><div class="label">Fornecedores ativos</div><div class="value num-display" id="kpiFornAtivos">—</div></div>
+          <div class="kpi"><div class="label">Maior fornecedor</div><div class="value num-display" id="kpiMaiorForn" style="font-size:16px;">—</div><div class="sub" id="kpiMaiorFornValor"></div></div>
+          <div class="kpi"><div class="label">Gasto médio por fornecedor</div><div class="value num-display" id="kpiMediaForn">—</div></div>
+          <div class="kpi gold"><div class="label">Concentração — Top 5 fornecedores</div><div class="value num-display" id="kpiConcentracao">—</div><div class="kpi-flag">do total gasto no período</div></div>
+        </div>
+        <div class="grid">
+          <div class="panel span2"><h3>Top 15 fornecedores <span class="muted">(por valor gasto)</span></h3><div class="chart-wrap tall"><canvas id="chartTopFornecedores"></canvas></div></div>
+          <div class="panel span2"><h3>Gasto mensal com fornecedores <span class="muted">(Compras — mesmo critério da Evolução mensal)</span></h3><div class="chart-wrap tall"><canvas id="chartFornMensal"></canvas></div></div>
+          <div class="panel span2">
+            <h3>Fornecedores que pararam de comprar <span class="muted">— compravam com regularidade e sumiram nos últimos meses</span></h3>
+            <div id="churnContent"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-insumos">
+        <div class="kpis">
+          <div class="kpi"><div class="label">Insumo de maior gasto</div><div class="value num-display" id="kpiTopInsumo" style="font-size:16px;">—</div><div class="sub" id="kpiTopInsumoValor"></div></div>
+          <div class="kpi"><div class="label">Insumos distintos</div><div class="value num-display" id="kpiInsumosDistintos">—</div></div>
+          <div class="kpi gold"><div class="label">Compra acima da média (mês mais recente)</div><div class="value num-display" id="kpiAlertasQtd">—</div><div class="kpi-flag" id="kpiAlertasQtdMes"></div></div>
+        </div>
+        <div class="grid">
+          <div class="panel"><h3>Distribuição por categoria</h3><div class="chart-wrap"><canvas id="chartCategoriaDonut2"></canvas></div></div>
+          <div class="panel"><h3>Top 12 insumos</h3><div class="chart-wrap"><canvas id="chartTopInsumos2"></canvas></div></div>
+          <div class="panel span2"><h3>Categoria por ano</h3><div class="chart-wrap tall"><canvas id="chartCategoriaPorAno"></canvas></div></div>
+          <div class="panel span2">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;">
+              <h3 style="border:none;margin:0;padding:0;">Alertas de compras <span class="muted">— quantidade comprada no mês mais recente comparada com a média mensal histórica do insumo</span></h3>
+              <button class="btn secondary" id="btnExportAlertasQtd" style="padding:6px 12px;font-size:11.5px;">Exportar Excel</button>
+            </div>
+            <div style="border-bottom:1px solid var(--line-soft);margin:10px 0 12px;"></div>
+            <div id="alertasQtdContent"></div>
+          </div>
+          <div class="panel span2">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;">
+              <h3 style="border:none;margin:0;padding:0;">Alertas de preço <span class="muted">— preço unitário do mês mais recente comparado com a média histórica do insumo</span></h3>
+              <button class="btn secondary" id="btnExportAlertasPreco" style="padding:6px 12px;font-size:11.5px;">Exportar Excel</button>
+            </div>
+            <div style="border-bottom:1px solid var(--line-soft);margin:10px 0 12px;"></div>
+            <div id="alertasPrecoContent"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-tabela">
+        <div class="panel">
+          <div class="search-box">
+            <input type="text" id="tabelaSearch" placeholder="Buscar por fornecedor, nome genérico ou nome comercial…">
+          </div>
+          <div id="tabelaSearchSummary" style="display:none;"></div>
+          <div class="tabela-toolbar">
+            <span id="tabelaResumo">—</span>
+            <div class="pagination">
+              <button id="tabelaPrev">‹ Anterior</button>
+              <span id="tabelaPageLabel">Página 1</span>
+              <button id="tabelaNext">Próxima ›</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="detail">
+              <thead><tr><th>Data Entrada</th><th>Fornecedor</th><th>Nome genérico</th><th>Nome comercial</th><th>Qtd. comprada</th><th>Valor Negociado / Valor Ordem</th><th>Situação / Origem</th></tr></thead>
+              <tbody id="tabelaBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="view" id="view-consumo">
+        <div class="panel">
+          <h3 style="border:none;margin-bottom:10px;">Controle de Consumo <span class="muted">— quantidade comprada x quantidade consumida, por produto</span></h3>
+          <div class="search-box">
+            <input type="text" id="consumoSearch" placeholder="Buscar insumo por nome genérico ou marca…">
+          </div>
+          <div class="tabela-toolbar">
+            <span id="consumoResumo">—</span>
+            <div class="pagination">
+              <button id="consumoPrev">‹ Anterior</button>
+              <span id="consumoPageLabel">Página 1</span>
+              <button id="consumoNext">Próxima ›</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="detail">
+              <thead><tr><th>Período</th><th>Produto <span class="muted">(nome genérico — passe o mouse p/ ver as marcas)</span></th><th>Qtd. comprada</th><th>Qtd. consumida</th><th>Tipo de saída</th></tr></thead>
+              <tbody id="consumoBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-dados">
+        <div class="section-note admin-only">
+          Envie aqui o <b>arquivo bruto</b> exportado do sistema todo mês (Compras e/ou Emenda). A ferramenta usa o <b>Valor Negociado</b> (coluna vl_negociado), a <b>Categoria</b> e o mês/ano, e junta com o histórico — sem precisar mexer em planilha. Os dados ficam salvos neste navegador.
+        </div>
+
+        <div class="grid grid-3">
+          <div class="panel admin-only">
+            <h3>Adicionar novo mês (arquivo bruto)</h3>
+            <div class="type-toggle" id="uploadTypeToggle">
+              <button class="sel" data-type="Compras">Compras</button>
+              <button data-type="Emenda">Emenda</button>
+            </div>
+            <div class="upload-zone" id="uploadZoneMensal" style="margin-top:12px;">
+              <h4>Arraste o arquivo aqui</h4>
+              <p>ou clique para selecionar (.xls / .xlsx)</p>
+              <input type="file" id="fileMensal" accept=".xls,.xlsx" style="display:none;">
+            </div>
+            <div class="hint">A ferramenta identifica sozinha se é um arquivo item a item (Compras/Emenda) ou um arquivo de ordens de emenda (id_ordem/vl_total_ordem). O tipo acima só é usado como reforço quando o arquivo não traz a coluna "sistema".</div>
+          </div>
+          <div class="panel admin-only">
+            <h3>Importar outra base consolidada</h3>
+            <p style="font-size:12.5px;color:var(--ink-soft);margin-top:0;">Para importar uma planilha já no formato "Banco de Dados" (com colunas Valor Negociado / Categoria / mês), como a que você já usa hoje.</p>
+            <div class="upload-zone" id="uploadZoneHistorico">
+              <h4>Arraste a planilha aqui</h4>
+              <p>ou clique para selecionar (.xlsx)</p>
+              <input type="file" id="fileHistorico" accept=".xls,.xlsx" style="display:none;">
+            </div>
+          </div>
+          <div class="panel admin-only">
+            <h3>Controle de Consumo (mensal)</h3>
+            <p style="font-size:12.5px;color:var(--ink-soft);margin-top:0;">Envie o arquivo "Paciente e Consumo" (.txt, separado por ;) exportado do sistema todo mês. A ferramenta soma a quantidade consumida por produto e cruza com a quantidade comprada.</p>
+            <div class="upload-zone" id="uploadZoneConsumo">
+              <h4>Arraste o arquivo de consumo aqui</h4>
+              <p>ou clique para selecionar (.txt)</p>
+              <input type="file" id="fileConsumo" accept=".txt" style="display:none;">
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:14px;">
+          <h3>Lotes carregados</h3>
+          <table class="batches">
+            <thead><tr><th>Origem</th><th>Tipo</th><th>Arquivo</th><th>Período</th><th>Registros</th><th>Adicionado</th><th></th></tr></thead>
+            <tbody id="batchesBody"></tbody>
+          </table>
+        </div>
+
+        <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:14px;">
+          <div class="panel">
+            <h3>Exportar</h3>
+            <p style="font-size:12.5px;color:var(--ink-soft);">Baixe todos os dados atuais (histórico + lotes) em CSV, para backup ou conferência.</p>
+            <button class="btn secondary" id="btnExportCsv">Exportar CSV</button>
+          </div>
+          <div class="panel">
+            <h3>Categorias consideradas</h3>
+            <div class="cat-legend" id="catLegendFull"></div>
+            <div class="hint">Mapeamento de grupo → categoria usado ao processar arquivos brutos novos. Se um grupo não for reconhecido, ele entra como "Outros".</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="credit-tag">Criador: Edgar Silva — Compras</div>
+
+<script>
+/* ============================================================
+   DADOS EMBUTIDOS (histórico inicial)
+   ============================================================ */
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const MONTH_ABBR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MONTH_NAME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const CATEGORY_COLORS = {
+  'Medicamento':'#A32B24','Material':'#3E6488','Manutenção':'#8A6A34',
+  'Alimentos':'#C2681E','Limpeza':'#54724A','Expediente':'#7A3B4A','Outros':'#8B7B78'
+};
+const CATEGORIA_MAP = {
+  'Agentes Imunizantes':'Medicamento','Analgesia E Anestesia':'Medicamento','Aparelho Cardiovascular':'Medicamento',
+  'Aparelho Digestório':'Medicamento','Aparelho Gênito-urinário':'Medicamento','Aparelho Respiratório':'Medicamento',
+  'Eletrólitos E Nutrição':'Medicamento','Equipamentos':'Manutenção','Gases Medicinais':'Material',
+  'Generos Alimenticios':'Alimentos','Hormônios E Anti-hormônios':'Medicamento','Imunologia E Alergia':'Medicamento',
+  'Material De Costura':'Expediente','Material De Decoracao':'Expediente','Material De Despensa':'Expediente',
+  'Material De Expediente':'Expediente','Material De Limpeza':'Limpeza','Material De Manutencao':'Manutenção',
+  'Material De Pcmso':'Material','Material Hospitalar':'Material','Neurologia':'Medicamento','Nutricao':'Alimentos',
+  'Oftalmologia':'Medicamento','Otologia':'Medicamento',
+  'Outros':'Medicamento','Pele E Mucosas':'Medicamento','Produtos Antídotos E Antagonistas':'Medicamento',
+  'Produtos Diagnósticos':'Medicamento','Produtos Germicidas':'Medicamento','Psiquiatria':'Medicamento',
+  'Quimioterapia Antibacteriana':'Medicamento','Quimioterapia Antifúngica':'Medicamento','Quimioterapia Antineoplásica':'Medicamento',
+  'Quimioterapia Antiparasitária':'Medicamento','Quimioterapia Antiviral':'Medicamento','Sangue E Hematologia':'Medicamento',
+  'Soluções Diluentes E Soluções P/ Diálise':'Material'
+};
+const HIST_EPOCH = new Date('2020-01-01T00:00:00');
+
+/* ============================================================
+   LIBRARY LOADING (with CDN fallback, never blocks the app)
+   ============================================================ */
+let LIBS_READY = { xlsx:false, chart:false, jspdf:false, datalabels:false };
+function loadScriptWithFallback(urls){
+  return new Promise(resolve=>{
+    let i = 0;
+    function tryNext(){
+      if(i>=urls.length){ resolve(false); return; }
+      const s = document.createElement('script');
+      s.src = urls[i++];
+      s.onload = ()=>resolve(true);
+      s.onerror = ()=>{ s.remove(); tryNext(); };
+      document.head.appendChild(s);
+    }
+    tryNext();
+  });
+}
+async function loadLibraries(){
+  LIBS_READY.xlsx = await loadScriptWithFallback([
+    'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+    'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+    'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
+  ]);
+  LIBS_READY.chart = await loadScriptWithFallback([
+    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+    'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.min.js'
+  ]);
+  if(LIBS_READY.chart && window.Chart){
+    Chart.defaults.font.family = "Inter";
+    Chart.defaults.font.size = 13.5; // números maiores em eixos, legendas e tooltips de todos os gráficos
+    Chart.defaults.color = '#57696F';
+    Chart.defaults.animation = false; // renderização imediata e estável (tela e exportação)
+    LIBS_READY.datalabels = await loadScriptWithFallback([
+      'https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js',
+      'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js',
+      'https://unpkg.com/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js'
+    ]);
+    if(LIBS_READY.datalabels && window.ChartDataLabels){
+      Chart.register(ChartDataLabels);
+      Chart.defaults.set('plugins.datalabels', { display:false });
+    }
+  }
+  LIBS_READY.jspdf = await loadScriptWithFallback([
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+    'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js'
+  ]);
+}
+
+
+function fmtBRL(v){
+  return (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+}
+function fmtBRLfull(v){
+  return (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+}
+function fmtInt(v){ return (v||0).toLocaleString('pt-BR'); }
+function fmtNum(v){ return Math.round(v||0).toLocaleString('pt-BR'); }
+function dayIndexOf(date){ return Math.floor((date - HIST_EPOCH) / 86400000); }
+function dateFromDayIndex(idx){ return new Date(HIST_EPOCH.getTime() + idx*86400000); }
+function isoFromDayIndex(idx){ const d=dateFromDayIndex(idx); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function dayIndexFromIso(iso){ if(!iso) return null; const [y,m,d]=iso.split('-').map(Number); return dayIndexOf(new Date(y,m-1,d)); }
+function fmtDateBR(idx){ const d=dateFromDayIndex(idx); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let ALL_RECORDS = [];   // itens (compras/emenda item-level) {i,n,day,forn,gen,cat,q,v,sis('Compras'|'Emenda'),b}
+let ALL_ORDENS = [];    // emendas por ordem de pagamento {ord,day,forn,v,situacao,b}
+let ALL_CONSUMO = [];   // controle de consumo (saída), agregado por produto+tipo {gen,prod,tipo,qty,pmin,pmax,b}
+let BATCHES = [];       // {id, dataset('itens'|'ordens'|'consumo'), origin('hist'|'mensal'|'consolidado'), tipo, filename, addedAt, rows, minDay, maxDay}
+
+const DEFAULT_DATE_FROM = '2025-01-01';
+let FILTERS = { dateFrom: dayIndexFromIso(DEFAULT_DATE_FROM), dateTo: null, cat:new Set(), sis:new Set(['Compras','Emenda']) };
+let currentView = 'geral';
+let charts = {};
+let tablePage = 1;
+const TABLE_PAGE_SIZE = 50;
+
+/* ============================================================
+   SUPABASE (fonte única dos dados) — só a chave pública (publishable/anon) vai no front.
+   Quem protege os dados é a RLS do banco: leitura só para e-mails liberados,
+   escrita só para admins. Esconder botões na tela é apenas conveniência.
+   ============================================================ */
+const SUPABASE_URL = 'https://mjjpfomgxthzjtqzzfqs.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_UhlEoBQnKhZxNQWUnl8bFA_sGFnKzs4';
+let sb = null;
+let IS_ADMIN = false;
+let USER_EMAIL = '';
+let appStarted = false;
+let lastLoadAt = 0;
+let busyWriting = false;
+
+/* ---- formato compacto do payload (colunar, com dicionário para textos) ----
+   { n: <nº de linhas>, c: { campo: { d:[valores únicos], v:[índices] } | { v:[valores] } } } */
+function packRecords(records){
+  const keys = [];
+  const seen = new Set();
+  for(const r of records){ for(const k in r){ if(k!=='b' && !seen.has(k)){ seen.add(k); keys.push(k); } } }
+  const c = {};
+  for(const k of keys){
+    let allStr = true;
+    for(const r of records){ const x = r[k]; if(x!=null && typeof x!=='string'){ allStr = false; break; } }
+    if(allStr){
+      const idx = new Map(), d = [], v = new Array(records.length);
+      records.forEach((r,i)=>{
+        const x = r[k];
+        if(x==null){ v[i] = -1; return; }
+        let j = idx.get(x);
+        if(j===undefined){ j = d.length; d.push(x); idx.set(x,j); }
+        v[i] = j;
+      });
+      c[k] = { d, v };
+    } else {
+      c[k] = { v: records.map(r=>r[k]===undefined ? null : r[k]) };
+    }
+  }
+  return { n: records.length, c };
+}
+function unpackRecords(p, batchId){
+  const out = new Array(p.n);
+  const keys = Object.keys(p.c);
+  for(let i=0;i<p.n;i++) out[i] = { b: batchId };
+  for(const k of keys){
+    const col = p.c[k];
+    if(col.d){ for(let i=0;i<p.n;i++){ const j = col.v[i]; out[i][k] = j<0 ? null : col.d[j]; } }
+    else { for(let i=0;i<p.n;i++) out[i][k] = col.v[i]; }
+  }
+  return out;
+}
+
+/* ---- erros / estado da tela ---- */
+function friendlyError(e){
+  const msg = String((e && (e.message || e.error_description)) || e || '');
+  const status = e && (e.status || e.code);
+  if(/failed to fetch|networkerror|load failed|network request failed|timeout|aborted/i.test(msg) || status===0)
+    return { net:true, text:'Não foi possível conectar ao banco de dados. Verifique sua internet. Se o problema continuar, o projeto Supabase pode estar pausado por inatividade (plano grátis): o administrador precisa clicar em "Restore project" no painel do Supabase.' };
+  if(/^5\d\d$/.test(String(status)) || /paused|unavailable|bad gateway|upstream/i.test(msg))
+    return { net:true, text:'O banco de dados está indisponível ou pausado no momento. O administrador precisa reativá-lo no painel do Supabase (Restore project) e então você pode tentar de novo.' };
+  if(/invalid login|invalid_credentials/i.test(msg)) return { text:'E-mail ou senha incorretos.' };
+  if(/email not confirmed/i.test(msg)) return { text:'E-mail ainda não confirmado. Use o link enviado ao seu e-mail.' };
+  if(/row-level security|permission denied|42501/i.test(msg)) return { text:'Sem permissão para esta operação.' };
+  return { text: msg || 'Erro inesperado.' };
+}
+function showOverlay(id, show){ const el = document.getElementById(id); if(el) el.style.display = show ? 'flex' : 'none'; }
+function showStatus(text, withRetry){
+  document.getElementById('statusText').textContent = text;
+  document.getElementById('statusRetry').style.display = withRetry ? '' : 'none';
+  showOverlay('statusOverlay', true);
+}
+function showLogin(msg, mode){
+  showOverlay('statusOverlay', false);
+  mode = mode || 'login';
+  document.getElementById('loginForm').style.display = mode==='login' ? '' : 'none';
+  document.getElementById('recoverForm').style.display = mode==='recover' ? '' : 'none';
+  document.getElementById('loginMsg').textContent = msg || '';
+  showOverlay('loginOverlay', true);
+  document.body.classList.remove('is-admin');
+}
+
+/* ---- carga dos lotes: UMA consulta (nunca linha a linha) ---- */
+function resetMemory(){ ALL_RECORDS = []; ALL_ORDENS = []; ALL_CONSUMO = []; BATCHES = []; }
+async function loadPersisted(){
+  const { data, error } = await sb.from('lotes')
+    .select('id,dataset,origin,tipo,filename,added_at,rows,min_day,max_day,periodo,payload')
+    .order('id', { ascending: true });
+  if(error) throw error;
+  resetMemory();
+  for(const row of data){
+    const recs = unpackRecords(row.payload, row.id);
+    if(row.dataset==='ordens'){ for(const r of recs) ALL_ORDENS.push(r); }
+    else if(row.dataset==='consumo'){ for(const r of recs) ALL_CONSUMO.push(r); }
+    else { for(const r of recs) ALL_RECORDS.push(r); }
+    BATCHES.push({
+      id: row.id, dataset: row.dataset, origin: row.origin, tipo: row.tipo, filename: row.filename,
+      addedAt: row.origin==='hist' ? null : row.added_at, rows: row.rows,
+      minDay: row.min_day, maxDay: row.max_day, periodo: row.periodo
+    });
+  }
+  lastLoadAt = Date.now();
+}
+async function persistNewBatch(batchMeta, records){
+  if(!IS_ADMIN) throw new Error('Somente o administrador pode enviar lotes.');
+  busyWriting = true;
+  try{
+    const { data, error } = await sb.from('lotes').insert({
+      dataset: batchMeta.dataset, origin: batchMeta.origin, tipo: batchMeta.tipo, filename: batchMeta.filename,
+      rows: batchMeta.rows, min_day: isFinite(batchMeta.minDay) ? batchMeta.minDay : null,
+      max_day: isFinite(batchMeta.maxDay) ? batchMeta.maxDay : null, periodo: batchMeta.periodo || null,
+      payload: packRecords(records)
+    }).select('id,added_at').single();
+    if(error) throw new Error(friendlyError(error).text);
+    batchMeta.id = data.id;
+    batchMeta.addedAt = data.added_at;
+    for(const r of records) r.b = data.id;
+    BATCHES.push(batchMeta);
+  } finally { busyWriting = false; }
+}
+async function removeBatch(id){
+  if(!IS_ADMIN){ showToast('Somente o administrador pode remover lotes.', true); return; }
+  busyWriting = true;
+  try{
+    const { data, error } = await sb.from('lotes').delete().eq('id', id).select('id');
+    if(error) throw new Error(friendlyError(error).text);
+    if(!data || !data.length){ showToast('Não foi possível remover o lote (sem permissão ou já removido).', true); return; }
+  }catch(e){ showToast('Erro ao remover: '+e.message, true); return; }
+  finally { busyWriting = false; }
+  ALL_RECORDS = ALL_RECORDS.filter(r=>r.b!==id);
+  ALL_ORDENS = ALL_ORDENS.filter(r=>r.b!==id);
+  ALL_CONSUMO = ALL_CONSUMO.filter(r=>r.b!==id);
+  BATCHES = BATCHES.filter(b=>b.id!==id);
+  rebuildFilterOptions();
+  renderBatchesTable();
+  renderCurrentView();
+  showToast('Lote removido.');
+}
+
+/* ---- autenticação ---- */
+function loadScriptOnce(url){
+  return new Promise((res, rej)=>{ const s = document.createElement('script'); s.src = url; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+}
+async function bootAuth(){
+  try{
+    if(!window.supabase){
+      try{ await loadScriptOnce('https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'); }catch(e){}
+    }
+    if(!window.supabase) throw new Error('failed to fetch');
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  }catch(e){
+    showStatus('Não foi possível carregar a biblioteca de acesso (sem internet?). Recarregue a página.', true);
+    return;
+  }
+  wireAuthUI();
+  sb.auth.onAuthStateChange((ev)=>{
+    if(ev==='PASSWORD_RECOVERY'){ showOverlay('loginOverlay', true); document.getElementById('loginForm').style.display='none'; document.getElementById('recoverForm').style.display='none'; document.getElementById('newPassForm').style.display=''; }
+    if(ev==='SIGNED_OUT'){ appStarted = false; showLogin(); }
+  });
+  try{
+    const { data, error } = await sb.auth.getSession();
+    if(error) throw error;
+    if(data.session) await startApp(); else showLogin();
+  }catch(e){
+    const fe = friendlyError(e);
+    if(fe.net) showStatus(fe.text, true); else showLogin(fe.text);
+  }
+}
+function wireAuthUI(){
+  const $ = id => document.getElementById(id);
+  $('loginForm').addEventListener('submit', async ev=>{
+    ev.preventDefault();
+    $('loginMsg').textContent = 'Entrando…';
+    try{
+      const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPass').value });
+      if(error) throw error;
+      $('loginPass').value = '';
+      await startApp();
+    }catch(e){
+      const fe = friendlyError(e);
+      if(fe.net){ showStatus(fe.text, true); } else { $('loginMsg').textContent = fe.text; }
+    }
+  });
+  $('linkForgot').addEventListener('click', e=>{ e.preventDefault(); showLogin('', 'recover'); });
+  $('linkBack').addEventListener('click', e=>{ e.preventDefault(); showLogin('', 'login'); });
+  $('recoverForm').addEventListener('submit', async ev=>{
+    ev.preventDefault();
+    try{
+      const { error } = await sb.auth.resetPasswordForEmail($('recoverEmail').value.trim(), { redirectTo: location.origin + location.pathname });
+      if(error) throw error;
+      $('loginMsg').textContent = 'Se o e-mail estiver liberado, você receberá um link para definir a senha.';
+    }catch(e){ $('loginMsg').textContent = friendlyError(e).text; }
+  });
+  $('newPassForm').addEventListener('submit', async ev=>{
+    ev.preventDefault();
+    const p = $('newPass').value;
+    if(p.length < 8){ $('loginMsg').textContent = 'Use ao menos 8 caracteres.'; return; }
+    try{
+      const { error } = await sb.auth.updateUser({ password: p });
+      if(error) throw error;
+      $('newPass').value = '';
+      $('newPassForm').style.display = 'none';
+      await startApp();
+    }catch(e){ $('loginMsg').textContent = friendlyError(e).text; }
+  });
+  $('statusRetry').addEventListener('click', ()=>{ showOverlay('statusOverlay', false); bootRetry(); });
+  $('btnLogout').addEventListener('click', async ()=>{ try{ await sb.auth.signOut(); }catch(e){} location.reload(); });
+  // dados mudam em outro navegador (upload/remoção do admin): recarrega ao voltar para a aba
+  document.addEventListener('visibilitychange', async ()=>{
+    if(document.visibilityState!=='visible' || !appStarted || busyWriting || Date.now()-lastLoadAt < 120000) return;
+    try{ await loadPersisted(); rebuildFilterOptions(); renderBatchesTable(); renderCurrentView(); }catch(e){ console.warn('refresh falhou', e); }
+  });
+}
+async function bootRetry(){
+  try{
+    const { data, error } = await sb.auth.getSession();
+    if(error) throw error;
+    if(data.session) await startApp(); else showLogin();
+  }catch(e){ const fe = friendlyError(e); if(fe.net) showStatus(fe.text, true); else showLogin(fe.text); }
+}
+
+/* ---- inicia o painel depois do login ---- */
+async function startApp(){
+  showOverlay('loginOverlay', false);
+  showStatus('Carregando dados…', false);
+  document.getElementById('statusRetry').style.display = 'none';
+  try{
+    const { data: u } = await sb.auth.getUser();
+    USER_EMAIL = (u && u.user && u.user.email || '').toLowerCase();
+    const [adm, lei] = await Promise.all([
+      sb.from('admins').select('email').maybeSingle(),
+      sb.from('leitores').select('email').maybeSingle()
+    ]);
+    if(adm.error) throw adm.error;
+    if(lei.error) throw lei.error;
+    IS_ADMIN = !!adm.data;
+    if(!IS_ADMIN && !lei.data){
+      await sb.auth.signOut();
+      showLogin('Este e-mail não está liberado para acessar o painel. Peça ao administrador.');
+      return;
+    }
+    await loadPersisted();
+  }catch(e){
+    console.error('falha ao carregar', e);
+    const fe = friendlyError(e);
+    showStatus(fe.text, true);
+    return;
+  }
+  showOverlay('statusOverlay', false);
+  document.body.classList.toggle('is-admin', IS_ADMIN);
+  document.getElementById('userLabel').textContent = USER_EMAIL + (IS_ADMIN ? ' (admin)' : '');
+  document.getElementById('btnLogout').style.display = '';
+  appStarted = true;
+  try{ rebuildFilterOptions(); }catch(e){ console.error(e); }
+  try{ renderBatchesTable(); }catch(e){ console.error(e); }
+  try{ updateSidebarFooter(); }catch(e){ console.error(e); }
+  try{ if(!LIBS_READY.__tried){ LIBS_READY.__tried = true; await loadLibraries(); } }catch(e){ console.error('library load failed', e); }
+  try{ renderCurrentView(); }catch(e){ console.error('render failed', e); showToast('Não foi possível desenhar os gráficos.', true); }
+}
+
+
+
+/* ============================================================
+   PARSE UPLOADED FILES
+   ============================================================ */
+function findCol(headerRow, names){
+  const norm = s => String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const H = headerRow.map(norm);
+  for(const name of names){
+    const nn = norm(name);
+    const idx = H.indexOf(nn);
+    if(idx>=0) return idx;
+  }
+  return -1;
+}
+function pickInsumoName(genVal, prodVal){
+  const g = genVal!=null ? String(genVal).trim() : '';
+  if(g) return g;
+  const p = prodVal!=null ? String(prodVal).trim() : '';
+  if(p) return p;
+  return 'Não informado';
+}
+
+function excelSerialToDate(v){
+  if(v instanceof Date) return v;
+  if(typeof v === 'number'){
+    // Excel serial date (1900 system)
+    const utc_days = Math.floor(v - 25569);
+    return new Date(utc_days*86400000);
+  }
+  if(typeof v === 'string'){
+    // try dd/mm/yyyy or yyyy-mm-dd
+    let m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if(m) return new Date(+m[3]<100?2000+ +m[3]: +m[3], +m[2]-1, +m[1]);
+    m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+  }
+  return null;
+}
+
+function readWorkbookFromArrayBuffer(buf){
+  const wb = XLSX.read(buf, {type:'array', cellDates:true});
+  return wb;
+}
+
+function parseRawBruto(wb, tipoHint, filename){
+  const sheetName = wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+  if(aoa.length < 2) throw new Error('Planilha vazia ou sem dados.');
+  const header = aoa[0];
+  const col = {
+    id: findCol(header,['id_entrada']),
+    dt: findCol(header,['dt_entrada']),
+    nota: findCol(header,['nr_nota']),
+    qt: findCol(header,['qt_item']),
+    vlReal: findCol(header,['vl_real']),
+    vlItem: findCol(header,['vl_item']),
+    vlNeg: findCol(header,['vl_negociado']),
+    unidade: findCol(header,['nm_unidade']),
+    forn: findCol(header,['nm_fornecedor']),
+    gen: findCol(header,['generico']),
+    prod: findCol(header,['nm_produto']),
+    grupo: findCol(header,['nm_grupo']),
+    catDireta: findCol(header,['categoria']),
+    sistema: findCol(header,['sistema'])
+  };
+  if(col.dt<0 || (col.vlNeg<0 && col.vlItem<0 && col.vlReal<0)){
+    throw new Error('Não encontrei as colunas esperadas (dt_entrada, vl_negociado...). Confira se este é o arquivo bruto do sistema.');
+  }
+  const records = [];
+  let minDay=Infinity, maxDay=-Infinity;
+  for(let r=1;r<aoa.length;r++){
+    const row = aoa[r];
+    if(!row || row.every(c=>c===null||c==='')) continue;
+    const dtRaw = row[col.dt];
+    const date = excelSerialToDate(dtRaw);
+    if(!date || isNaN(date.getTime())) continue;
+    const valorNegociado = pickValorNegociado(row, col);
+    const grupo = col.grupo>=0 ? String(row[col.grupo]||'').trim() : '';
+    const catDiretaVal = col.catDireta>=0 ? String(row[col.catDireta]||'').trim() : '';
+    const cat = catDiretaVal || CATEGORIA_MAP[grupo] || 'Outros';
+    let sis = tipoHint;
+    if(col.sistema>=0){
+      const sVal = String(row[col.sistema]||'');
+      if(/emenda/i.test(sVal)) sis='Emenda'; else if(/compras/i.test(sVal)) sis='Compras';
+    }
+    const day = dayIndexOf(new Date(date.getFullYear(),date.getMonth(),date.getDate()));
+    if(day<minDay) minDay=day;
+    if(day>maxDay) maxDay=day;
+    records.push({
+      i: col.id>=0 ? (parseInt(row[col.id])||0) : 0,
+      n: col.nota>=0 ? (parseInt(row[col.nota])||0) : 0,
+      day,
+      forn: col.forn>=0 ? String(row[col.forn]||'Não informado').trim() : 'Não informado',
+      gen: pickInsumoName(col.gen>=0?row[col.gen]:null, col.prod>=0?row[col.prod]:null),
+      prod: pickInsumoName(col.prod>=0?row[col.prod]:null, col.gen>=0?row[col.gen]:null),
+      cat, q: col.qt>=0 ? (parseInt(row[col.qt])||0) : 0,
+      v: Math.round(valorNegociado*100)/100,
+      vi: col.vlItem>=0 ? Math.round((parseFloat(row[col.vlItem])||0)*10000)/10000 : 0,
+      vn: col.vlNeg>=0 ? Math.round((parseFloat(row[col.vlNeg])||0)*100)/100 : 0,
+      un: col.unidade>=0 ? String(row[col.unidade]||'—').trim().toLowerCase() : '—',
+      sis, b:null
+    });
+  }
+  if(records.length===0) throw new Error('Nenhuma linha válida encontrada no arquivo.');
+  return {records, minDay, maxDay};
+}
+
+function parseConsolidado(wb, filename){
+  let sheetName = wb.SheetNames.find(n=>/dados/i.test(n)) || wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+  if(aoa.length<2) throw new Error('Planilha vazia.');
+  const header = aoa[0];
+  const col = {
+    id: findCol(header,['id_entrada']),
+    dt: findCol(header,['dt_entrada']),
+    nota: findCol(header,['nr_nota']),
+    qt: findCol(header,['qt_item']),
+    vlReal: findCol(header,['vl_real']),
+    valorReal: findCol(header,['valor real','valorreal']),
+    valorNeg: findCol(header,['valor negociado','valornegociado']),
+    vlItem: findCol(header,['vl_item']),
+    vlNeg: findCol(header,['vl_negociado']),
+    unidade: findCol(header,['nm_unidade']),
+    forn: findCol(header,['nm_fornecedor']),
+    gen: findCol(header,['generico']),
+    prod: findCol(header,['nm_produto']),
+    cat: findCol(header,['categoria']),
+    grupo: findCol(header,['nm_grupo']),
+    sistema: findCol(header,['sistema'])
+  };
+  if(col.dt<0) throw new Error('Não encontrei a coluna dt_entrada nesta planilha.');
+  const records = [];
+  let minDay=Infinity, maxDay=-Infinity;
+  for(let r=1;r<aoa.length;r++){
+    const row = aoa[r];
+    if(!row || row.every(c=>c===null||c==='')) continue;
+    const date = excelSerialToDate(row[col.dt]);
+    if(!date || isNaN(date.getTime())) continue;
+    const day = dayIndexOf(new Date(date.getFullYear(),date.getMonth(),date.getDate()));
+    if(day<minDay) minDay=day;
+    if(day>maxDay) maxDay=day;
+    const grupo = col.grupo>=0 ? String(row[col.grupo]||'').trim() : '';
+    const cat = col.cat>=0 ? (String(row[col.cat]||'').trim()||CATEGORIA_MAP[grupo]||'Outros') : (CATEGORIA_MAP[grupo]||'Outros');
+    const vNegociado = pickValorNegociado(row, col);
+    let sis = 'Compras';
+    if(col.sistema>=0 && /emenda/i.test(String(row[col.sistema]||''))) sis='Emenda';
+    records.push({
+      i: col.id>=0?(parseInt(row[col.id])||0):0,
+      n: col.nota>=0?(parseInt(row[col.nota])||0):0,
+      day,
+      forn: col.forn>=0?String(row[col.forn]||'Não informado').trim():'Não informado',
+      gen: pickInsumoName(col.gen>=0?row[col.gen]:null, col.prod>=0?row[col.prod]:null),
+      prod: pickInsumoName(col.prod>=0?row[col.prod]:null, col.gen>=0?row[col.gen]:null),
+      cat, q: col.qt>=0?(parseInt(row[col.qt])||0):0,
+      v: Math.round(vNegociado*100)/100,
+      vi: col.vlItem>=0 ? Math.round((parseFloat(row[col.vlItem])||0)*10000)/10000 : 0,
+      vn: col.vlNeg>=0 ? Math.round((parseFloat(row[col.vlNeg])||0)*100)/100 : 0,
+      un: col.unidade>=0 ? String(row[col.unidade]||'—').trim().toLowerCase() : '—',
+      sis, b:null
+    });
+  }
+  if(records.length===0) throw new Error('Nenhuma linha válida encontrada.');
+  return {records, minDay, maxDay};
+}
+
+function parseEmendaOrdens(wb, filename){
+  let sheetName = wb.SheetNames.find(n=>/emenda/i.test(n)) || wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+  if(aoa.length<2) throw new Error('Planilha vazia.');
+  const header = aoa[0];
+  const col = {
+    ord: findCol(header,['id_ordem']),
+    dt: findCol(header,['dt_ordem']),
+    forn: findCol(header,['nm_fornecedor']),
+    valor: findCol(header,['vl_total_ordem']),
+    situacao: findCol(header,['tipo','situacao']),
+    excluido: findCol(header,['fl_excluido'])
+  };
+  if(col.ord<0 || col.dt<0 || col.valor<0){
+    throw new Error('Não encontrei as colunas esperadas (id_ordem, dt_ordem, vl_total_ordem).');
+  }
+  const records = [];
+  let minDay=Infinity, maxDay=-Infinity;
+  for(let r=1;r<aoa.length;r++){
+    const row = aoa[r];
+    if(!row || row.every(c=>c===null||c==='')) continue;
+    if(col.excluido>=0){
+      const exc = row[col.excluido];
+      if(exc===true || exc===1 || exc==='TRUE' || exc==='true') continue;
+    }
+    const date = excelSerialToDate(row[col.dt]);
+    if(!date || isNaN(date.getTime())) continue;
+    const day = dayIndexOf(new Date(date.getFullYear(),date.getMonth(),date.getDate()));
+    if(day<minDay) minDay=day;
+    if(day>maxDay) maxDay=day;
+    records.push({
+      ord: parseInt(row[col.ord])||0,
+      day,
+      forn: col.forn>=0 ? String(row[col.forn]||'Não informado').trim() : 'Não informado',
+      v: Math.round((parseFloat(row[col.valor])||0)*100)/100,
+      situacao: col.situacao>=0 ? String(row[col.situacao]||'').trim() : '',
+      b:null
+    });
+  }
+  if(records.length===0) throw new Error('Nenhuma ordem válida encontrada no arquivo.');
+  return {records, minDay, maxDay};
+}
+
+function looksLikeOrdens(header){
+  const n = findCol(header,['id_ordem']);
+  const v = findCol(header,['vl_total_ordem']);
+  return n>=0 && v>=0;
+}
+function looksLikeItens(header){
+  return findCol(header,['dt_entrada'])>=0 && (findCol(header,['vl_negociado'])>=0 || findCol(header,['vl_real'])>=0 || findCol(header,['vl_item'])>=0);
+}
+
+// REGRA ÚNICA DE VALOR DO PAINEL: o valor de cada item é o VALOR NEGOCIADO (vl_negociado).
+// Quando o arquivo traz essa coluna, ela é usada estritamente (célula vazia = 0), sem cair em
+// vl_real nem em vl_item — assim a soma do painel bate com a soma da coluna no Excel.
+// Só se o arquivo nem tiver a coluna (formato muito antigo) é que cai em vl_real / vl_item.
+function pickValorNegociado(row, col){
+  const num = x => { const n = parseFloat(x); return isNaN(n) ? 0 : n; };
+  if(col.vlNeg>=0) return num(row[col.vlNeg]);
+  if(col.valorNeg>=0) return num(row[col.valorNeg]);
+  if(col.vlReal>=0) return num(row[col.vlReal]);
+  if(col.valorReal>=0) return num(row[col.valorReal]);
+  if(col.vlItem>=0) return num(row[col.vlItem]);
+  return 0;
+}
+
+/* ============================================================
+   PARSE ARQUIVO DE CONSUMO (.TXT, separado por ; — PACIENTE_E_CONSUMO)
+   Já chega agregado por (nome genérico, nome comercial, tipo de saída),
+   somando a quantidade consumida — o arquivo original pode ter centenas
+   de milhares de linhas, então a agregação acontece aqui mesmo, sem
+   guardar linha a linha.
+   ============================================================ */
+function parseConsumoTxt(text){
+  // separa em linhas, aceitando \r\n ou \n
+  let lines = text.split(/\r\n|\n/);
+  if(lines.length && lines[lines.length-1]==='') lines.pop();
+  if(lines.length < 2) throw new Error('Arquivo de consumo vazio ou sem dados.');
+  const header = lines[0].split(';').map(h=>h.trim().toUpperCase());
+  const idx = {};
+  header.forEach((h,i)=>{ idx[h]=i; });
+  const need = ['DTMOVIMENTO','NM_TIPO','NM_COMERCIAL','NM_GENERICO','QT_ITEM','PERIODO'];
+  for(const col of need){
+    if(!(col in idx)) throw new Error('Coluna "'+col+'" não encontrada — confira se este é o arquivo de Paciente e Consumo.');
+  }
+  const hasUnidade = 'NM_UNIDADE' in idx;
+  // agrega em memória por (generico normalizado + tipo) — marcas/comerciais diferentes do
+  // mesmo genérico entram juntas na mesma linha, e cada unidade de medida usada é somada à parte
+  // (um mesmo genérico pode ser consumido em "gts" e comprado em "fr", por exemplo — não dá pra
+  // somar direto, então guardamos as duas pra poder avisar na hora de montar a tabela).
+  const agg = new Map(); // key -> {gen,marcas:Set,tipo,qty,pmin,pmax,unidades:{un:qty}}
+  const norm = s => String(s||'').trim().toLowerCase();
+  let minPeriodo=null, maxPeriodo=null;
+  const maxColNeeded = Math.max(idx.NM_TIPO, idx.NM_COMERCIAL, idx.NM_GENERICO, idx.QT_ITEM, idx.PERIODO, hasUnidade?idx.NM_UNIDADE:0);
+  for(let li=1; li<lines.length; li++){
+    const line = lines[li];
+    if(!line) continue;
+    const parts = line.split(';');
+    if(parts.length <= maxColNeeded) continue;
+    let tipoRaw = (parts[idx.NM_TIPO]||'').trim();
+    const tipo = /paciente/i.test(tipoRaw) ? 'Paciente' : (tipoRaw || 'Consumo Interno');
+    let gen = (parts[idx.NM_GENERICO]||'').trim();
+    let com = (parts[idx.NM_COMERCIAL]||'').trim();
+    if(!gen && !com) continue;
+    if(!gen) gen = com;
+    if(!com) com = gen;
+    const qtyRaw = (parts[idx.QT_ITEM]||'0').replace(',', '.');
+    const qty = parseFloat(qtyRaw);
+    if(isNaN(qty)) continue;
+    const periodo = (parts[idx.PERIODO]||'').trim();
+    const un = hasUnidade ? (parts[idx.NM_UNIDADE]||'').trim().toLowerCase() || '—' : '—';
+    if(periodo){
+      if(!minPeriodo || periodo<minPeriodo) minPeriodo = periodo;
+      if(!maxPeriodo || periodo>maxPeriodo) maxPeriodo = periodo;
+    }
+    const key = norm(gen)+'|'+tipo;
+    let e = agg.get(key);
+    if(!e){ e = { gen, marcas:new Set(), tipo, qty:0, pmin:periodo||null, pmax:periodo||null, unidades:{} }; agg.set(key, e); }
+    e.qty += qty;
+    e.marcas.add(com);
+    e.unidades[un] = (e.unidades[un]||0) + qty;
+    if(periodo){
+      if(!e.pmin || periodo<e.pmin) e.pmin = periodo;
+      if(!e.pmax || periodo>e.pmax) e.pmax = periodo;
+    }
+  }
+  const records = [...agg.values()].map(e=>({
+    gen:e.gen, marcas:[...e.marcas].sort(), tipo:e.tipo, qty:Math.round(e.qty*100)/100,
+    pmin:e.pmin, pmax:e.pmax, unidades:e.unidades, b:null
+  }));
+  if(records.length===0) throw new Error('Nenhum registro válido encontrado no arquivo de consumo.');
+  return { records, minPeriodo, maxPeriodo };
+}
+
+function dedupeKey(r){ return r.i+'|'+r.n+'|'+r.gen+'|'+r.q+'|'+r.v; }
+function dedupeKeyOrdem(r){ return 'ord|'+r.ord; }
+
+async function ingestItens(records, tipo, filename, origin){
+  // Mantém TODOS os registros do arquivo, sem remover nenhum como "duplicado".
+  const fresh = records;
+  if(fresh.length===0){
+    showToast('Nenhum registro encontrado neste arquivo.', true);
+    return;
+  }
+  let minDay=Infinity, maxDay=-Infinity;
+  for(const r of fresh){ if(r.day<minDay)minDay=r.day; if(r.day>maxDay)maxDay=r.day; }
+  const batchMeta = {
+    id: null, dataset:'itens', origin, tipo, filename,
+    addedAt: new Date().toISOString(), rows: fresh.length, minDay, maxDay
+  };
+  await persistNewBatch(batchMeta, fresh);
+  ALL_RECORDS.push(...fresh);
+  rebuildFilterOptions();
+  renderBatchesTable();
+  renderCurrentView();
+  showToast(`${fresh.length} registro(s) adicionados.`);
+
+  // Confere na hora se algum insumo veio com quantidade 20%+ acima da média histórica
+  if(origin==='mensal'){
+    try{
+      const { alerts } = computeQtyAlerts(getFiltered());
+      if(alerts.length>0){
+        setTimeout(()=>showToast(`⚠ ${alerts.length} insumo(s) com quantidade comprada acima de ${ALERT_THRESHOLD_PCT}% da média este mês — veja em Insumos.`, true), 4400);
+      }
+    }catch(e){ console.error(e); }
+  }
+}
+
+async function ingestOrdens(records, filename, origin){
+  // Mantém TODAS as ordens do arquivo, sem remover nenhuma como "duplicada".
+  const fresh = records;
+  if(fresh.length===0){
+    showToast('Nenhuma ordem encontrada neste arquivo.', true);
+    return;
+  }
+  let minDay=Infinity, maxDay=-Infinity;
+  for(const r of fresh){ if(r.day<minDay)minDay=r.day; if(r.day>maxDay)maxDay=r.day; }
+  const batchMeta = {
+    id: null, dataset:'ordens', origin, tipo:'Emenda', filename,
+    addedAt: new Date().toISOString(), rows: fresh.length, minDay, maxDay
+  };
+  await persistNewBatch(batchMeta, fresh);
+  ALL_ORDENS.push(...fresh);
+  rebuildFilterOptions();
+  renderBatchesTable();
+  renderCurrentView();
+  showToast(`${fresh.length} ordem(ns) adicionadas.`);
+}
+
+async function ingestConsumo(records, filename, minPeriodo, maxPeriodo){
+  const fresh = records;
+  if(fresh.length===0){
+    showToast('Nenhum registro de consumo encontrado neste arquivo.', true);
+    return;
+  }
+  const batchMeta = {
+    id: null, dataset:'consumo', origin:'mensal', tipo:'Consumo', filename,
+    addedAt: new Date().toISOString(), rows: fresh.length, minDay:null, maxDay:null,
+    periodo: (minPeriodo && maxPeriodo) ? (minPeriodo===maxPeriodo?minPeriodo:minPeriodo+' a '+maxPeriodo) : null
+  };
+  await persistNewBatch(batchMeta, fresh);
+  ALL_CONSUMO.push(...fresh);
+  renderBatchesTable();
+  if(currentView==='consumo') renderConsumoTable();
+  showToast(`${fresh.length} produto(s) de consumo adicionados (${filename}).`);
+}
+
+/* ============================================================
+   FILTERS
+   ============================================================ */
+let SEEN_CATEGORIES = new Set(); // categorias já conhecidas nesta sessão — usado para nunca esconder uma categoria nova sem querer
+function rebuildFilterOptions(){
+  const cats = new Set();
+  let minDay=Infinity, maxDay=-Infinity;
+  for(const r of ALL_RECORDS){
+    cats.add(r.cat);
+    if(r.day<minDay) minDay=r.day;
+    if(r.day>maxDay) maxDay=r.day;
+  }
+  for(const o of ALL_ORDENS){
+    if(o.day<minDay) minDay=o.day;
+    if(o.day>maxDay) maxDay=o.day;
+  }
+  const catsArr = [...cats].sort();
+  // Uma categoria nunca vista antes (ex: veio num lote novo) entra automaticamente marcada,
+  // para não sumir gasto dos totais só porque a categoria não existia no momento em que os
+  // filtros foram montados. Categorias que o usuário desmarcou de propósito continuam respeitadas.
+  catsArr.forEach(c=>{
+    if(!SEEN_CATEGORIES.has(c)){ SEEN_CATEGORIES.add(c); FILTERS.cat.add(c); }
+  });
+
+  buildFilterPanel('cat', catsArr, v=>v);
+  buildFilterPanel('sis', ['Compras','Emenda'], v=>v);
+
+  if(isFinite(minDay) && isFinite(maxDay)){
+    const fromDefault = dayIndexFromIso(DEFAULT_DATE_FROM);
+    if(FILTERS.dateFrom===null || FILTERS.dateFrom===undefined){
+      FILTERS.dateFrom = Math.max(fromDefault, minDay);
+    } else if(minDay < FILTERS.dateFrom){
+      FILTERS.dateFrom = minDay; // amplia pra trás se um lote com data mais antiga for adicionado
+    }
+    if(FILTERS.dateTo===null || FILTERS.dateTo===undefined){
+      FILTERS.dateTo = maxDay;
+    } else if(maxDay > FILTERS.dateTo){
+      FILTERS.dateTo = maxDay; // amplia pra frente sempre que um lote mais recente for adicionado
+    }
+    document.getElementById('filterDateFrom').min = isoFromDayIndex(minDay);
+    document.getElementById('filterDateFrom').max = isoFromDayIndex(maxDay);
+    document.getElementById('filterDateTo').min = isoFromDayIndex(minDay);
+    document.getElementById('filterDateTo').max = isoFromDayIndex(maxDay);
+    document.getElementById('filterDateFrom').value = isoFromDayIndex(FILTERS.dateFrom);
+    document.getElementById('filterDateTo').value = isoFromDayIndex(FILTERS.dateTo);
+    buildQuickChips(minDay, maxDay);
+  }
+
+  updateFilterCounts();
+  renderCatLegend(catsArr);
+}
+
+function buildQuickChips(minDay, maxDay){
+  const wrap = document.getElementById('quickChips');
+  const years = [];
+  for(let y=dateFromDayIndex(minDay).getFullYear(); y<=dateFromDayIndex(maxDay).getFullYear(); y++) years.push(y);
+  wrap.innerHTML = '';
+  years.forEach(y=>{
+    const b = document.createElement('button');
+    b.textContent = String(y);
+    b.onclick = ()=>{
+      FILTERS.dateFrom = Math.max(dayIndexFromIso(y+'-01-01'), minDay);
+      FILTERS.dateTo = Math.min(dayIndexFromIso(y+'-12-31'), maxDay);
+      document.getElementById('filterDateFrom').value = isoFromDayIndex(FILTERS.dateFrom);
+      document.getElementById('filterDateTo').value = isoFromDayIndex(FILTERS.dateTo);
+      renderCurrentView(); if(currentView==='tabela'){ tablePage=1; renderTabela(); }
+    };
+    wrap.appendChild(b);
+  });
+  const bAll = document.createElement('button');
+  bAll.textContent = 'Tudo';
+  bAll.onclick = ()=>{
+    FILTERS.dateFrom = minDay; FILTERS.dateTo = maxDay;
+    document.getElementById('filterDateFrom').value = isoFromDayIndex(minDay);
+    document.getElementById('filterDateTo').value = isoFromDayIndex(maxDay);
+    renderCurrentView(); if(currentView==='tabela'){ tablePage=1; renderTabela(); }
+  };
+  wrap.appendChild(bAll);
+}
+
+function buildFilterPanel(key, values, labelFn){
+  const panel = document.getElementById('panel-'+key);
+  panel.innerHTML = '';
+  const actions = document.createElement('div');
+  actions.className='fp-actions';
+  actions.innerHTML = `<a data-act="all">Todos</a><a data-act="none">Limpar</a>`;
+  values.forEach(v=>{
+    const wrap = document.createElement('label');
+    wrap.innerHTML = `<input type="checkbox" data-key="${key}" data-val="${v}" ${FILTERS[key].has(v)?'checked':''}> ${labelFn(v)}`;
+    panel.appendChild(wrap);
+  });
+  panel.appendChild(actions);
+  actions.querySelector('[data-act="all"]').onclick = ()=>{
+    values.forEach(v=>FILTERS[key].add(v));
+    panel.querySelectorAll('input').forEach(cb=>cb.checked=true);
+    updateFilterCounts(); renderCurrentView(); if(currentView==='tabela'){ tablePage=1; renderTabela(); }
+  };
+  actions.querySelector('[data-act="none"]').onclick = ()=>{
+    FILTERS[key].clear();
+    panel.querySelectorAll('input').forEach(cb=>cb.checked=false);
+    updateFilterCounts(); renderCurrentView(); if(currentView==='tabela'){ tablePage=1; renderTabela(); }
+  };
+  panel.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.onchange = ()=>{
+      const val = cb.dataset.val;
+      if(cb.checked) FILTERS[key].add(val); else FILTERS[key].delete(val);
+      updateFilterCounts(); renderCurrentView(); if(currentView==='tabela'){ tablePage=1; renderTabela(); }
+    };
+  });
+}
+
+function updateFilterCounts(){
+  document.getElementById('cnt-cat').textContent = FILTERS.cat.size;
+  document.getElementById('cnt-sis').textContent = FILTERS.sis.size;
+}
+
+function renderCatLegend(cats){
+  const el = document.getElementById('catLegendFull');
+  const grouped = {};
+  for(const [grupo,cat] of Object.entries(CATEGORIA_MAP)){
+    (grouped[cat] = grouped[cat]||[]).push(grupo);
+  }
+  el.innerHTML = Object.entries(grouped).map(([cat,grupos])=>{
+    const color = CATEGORY_COLORS[cat]||CATEGORY_COLORS['Outros'];
+    return `<span title="${grupos.join(', ')}"><i style="background:${color}"></i>${cat} (${grupos.length} grupos)</span>`;
+  }).join('');
+}
+
+function getFiltered(){
+  return ALL_RECORDS.filter(r=>{
+    if(FILTERS.dateFrom!=null && r.day<FILTERS.dateFrom) return false;
+    if(FILTERS.dateTo!=null && r.day>FILTERS.dateTo) return false;
+    return FILTERS.cat.has(r.cat) && FILTERS.sis.has(r.sis);
+  });
+}
+function getFilteredOrdens(){
+  if(!FILTERS.sis.has('Emenda')) return [];
+  return ALL_ORDENS.filter(o=>{
+    if(FILTERS.dateFrom!=null && o.day<FILTERS.dateFrom) return false;
+    if(FILTERS.dateTo!=null && o.day>FILTERS.dateTo) return false;
+    return true;
+  });
+}
+// Itens/ordens de um intervalo de dias arbitrário, respeitando cat/sis mas não o período ativo — usado para comparar com o "período anterior".
+function getRecordsInRange(fromDay,toDay){
+  return ALL_RECORDS.filter(r=> r.day>=fromDay && r.day<=toDay && FILTERS.cat.has(r.cat) && FILTERS.sis.has(r.sis));
+}
+function getOrdensInRange(fromDay,toDay){
+  if(!FILTERS.sis.has('Emenda')) return [];
+  return ALL_ORDENS.filter(o=> o.day>=fromDay && o.day<=toDay);
+}
+function getPreviousPeriodTotals(){
+  if(FILTERS.dateFrom==null || FILTERS.dateTo==null) return null;
+  const len = FILTERS.dateTo - FILTERS.dateFrom + 1;
+  const prevTo = FILTERS.dateFrom - 1;
+  const prevFrom = prevTo - len + 1;
+  const items = getRecordsInRange(prevFrom, prevTo);
+  const ordens = getOrdensInRange(prevFrom, prevTo);
+  const compras = items.filter(r=>r.sis==='Compras').reduce((s,r)=>s+r.v,0);
+  const emenda = ordens.reduce((s,o)=>s+o.v,0);
+  const hasData = items.length>0 || ordens.length>0;
+  return { compras, emenda, total: compras+emenda, hasData };
+}
+function pctDeltaBadge(curr, prev, hasData){
+  if(!hasData || !prev){ return '<span class="delta-badge neutral">sem dado no período anterior</span>'; }
+  const pct = ((curr-prev)/prev)*100;
+  const arrow = pct>=0 ? '▲' : '▼';
+  const cls = pct>=0 ? 'up' : 'down';
+  return `<span class="delta-badge ${cls}">${arrow} ${Math.abs(pct).toFixed(1)}% vs período anterior</span>`;
+}
+
+/* ============================================================
+   CHART HELPERS
+   ============================================================ */
+function destroyChart(id){ if(charts[id]){ try{ charts[id].destroy(); }catch(e){} delete charts[id]; } }
+function makeChart(id, config){
+  const el = document.getElementById(id);
+  if(!el) return null;
+  if(!LIBS_READY.chart || typeof Chart === 'undefined'){
+    const wrap = el.closest('.chart-wrap');
+    if(wrap && !wrap.querySelector('.chart-fallback')){
+      wrap.insertAdjacentHTML('beforeend', '<div class="chart-fallback" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-size:12px;text-align:center;padding:0 20px;">Não foi possível carregar a biblioteca de gráficos (sem conexão com a internet). Os números continuam disponíveis nos cartões acima.</div>');
+    }
+    return null;
+  }
+  destroyChart(id);
+  const ctx = el.getContext('2d');
+  charts[id] = new Chart(ctx, config);
+  return charts[id];
+}
+
+function sumByKey(records, keyFn){
+  const map = new Map();
+  for(const r of records){
+    const k = keyFn(r);
+    map.set(k, (map.get(k)||0)+r.v);
+  }
+  return map;
+}
+function topN(map, n){
+  return [...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n);
+}
+function fmtCompact(v){
+  try{
+    return new Intl.NumberFormat('pt-BR', {notation:'compact', compactDisplay:'short', style:'currency', currency:'BRL', maximumFractionDigits:1}).format(v||0);
+  }catch(e){ return fmtBRL(v); }
+}
+function DL(opts){
+  return Object.assign({ display:true, color:'#241615', font:{size:13,weight:'600'}, formatter:v=>v? fmtBRL(v):'' }, opts);
+}
+// Rótulos "inteligentes" para barras: entra dentro da barra quando ela é
+// grande o suficiente; sai por cima (fora, em cor escura) quando é pequena,
+// evitando texto cortado em barras curtas.
+function smartBarDL(allValues, extra){
+  const maxV = Math.max(1, ...allValues.filter(v=>typeof v==='number'));
+  const isSmall = (ctx)=>{
+    const v = ctx.dataset.data[ctx.dataIndex];
+    return !v || v < maxV*0.14;
+  };
+  return DL(Object.assign({
+    anchor: (ctx)=> isSmall(ctx) ? 'end' : 'center',
+    align:  (ctx)=> isSmall(ctx) ? 'end' : 'center',
+    color:  (ctx)=> isSmall(ctx) ? '#241615' : '#fff',
+    clip: false
+  }, extra||{}));
+}
+function legendWithValues(){
+  return {
+    generateLabels(chart){
+      const data = chart.data;
+      if(!data.labels || !data.labels.length) return [];
+      const ds = data.datasets[0];
+      return data.labels.map((label,i)=>({
+        text: `${label} — ${fmtBRL(ds.data[i])}`,
+        fillStyle: ds.backgroundColor[i],
+        strokeStyle: '#fff', lineWidth:1, index:i
+      }));
+    }
+  };
+}
+
+// Plugin: desenha o valor de CADA fatia fora do círculo, com uma linha guia até a fatia.
+// Evita sobreposição empilhando verticalmente rótulos que caem muito próximos, no mesmo lado.
+let PIE_LABEL_FONT_PX = 13; // tamanho da fonte dos rótulos de rosca/pizza; é aumentado temporariamente durante a exportação em PDF
+let PIE_LABEL_SCALE = 1;    // escala geométrica das linhas guia (distância, espaçamento entre rótulos) — cresce junto com a fonte na exportação
+// Linha guia curta ligando cada ponto do gráfico de linha ao número (que fica afastado,
+// alternando acima/abaixo do ponto, igual já era feito — só que agora com mais distância
+// e uma linha fina indicando de qual ponto/mês é aquele valor).
+const lineLeaderLinesPlugin = {
+  id: 'lineLeaderLines',
+  afterDatasetsDraw(chart, args, opts){
+    const meta = chart.getDatasetMeta(0);
+    if(!meta || !meta.data || !meta.data.length) return;
+    const { ctx } = chart;
+    const offset = (opts && opts.offset) || 22;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(36,22,21,0.3)';
+    ctx.lineWidth = 1;
+    meta.data.forEach((point, i)=>{
+      const above = i%2===0;
+      const y1 = point.y + (above ? -6 : 6);
+      const y2 = point.y + (above ? -offset : offset);
+      ctx.beginPath();
+      ctx.moveTo(point.x, y1);
+      ctx.lineTo(point.x, y2);
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+};
+const pieLeaderLinesPlugin = {
+  id: 'pieLeaderLines',
+  afterDraw(chart, args, opts){
+    const meta = chart.getDatasetMeta(0);
+    if(!meta || !meta.data || !meta.data.length) return;
+    const ds = chart.data.datasets[0];
+    const total = ds.data.reduce((a,b)=>a+(b||0),0);
+    if(!total) return;
+    const {ctx} = chart;
+    const valueFmt = opts && opts.formatter || (v=>fmtBRL(v));
+    const minFrac = (opts && opts.minFrac) || 0; // 0 = mostra todas as fatias
+    const items = [];
+    meta.data.forEach((arc,i)=>{
+      const value = ds.data[i];
+      if(!value || value/total < minFrac) return;
+      const angle = (arc.startAngle + arc.endAngle)/2;
+      const cos = Math.cos(angle), sin = Math.sin(angle);
+      const cx = arc.x, cy = arc.y, outerR = arc.outerRadius;
+      items.push({ i, value, angle, cos, sin, cx, cy, outerR, side: cos>=0?1:-1 });
+    });
+    // empilha por lado (esquerda/direita) para não sobrepor texto quando os ângulos ficam próximos
+    [-1,1].forEach(side=>{
+      const group = items.filter(it=>it.side===side).sort((a,b)=>a.sin-b.sin);
+      const used = [];
+      group.forEach(it=>{
+        const off = 18*PIE_LABEL_SCALE, gap = 17*PIE_LABEL_SCALE;
+        let y2 = it.cy + (it.outerR+off)*it.sin;
+        // afasta verticalmente se colidir com um rótulo já posicionado deste lado
+        for(const u of used){ if(Math.abs(u-y2) < gap){ y2 = u + (y2>=u?gap:-gap); } }
+        used.push(y2);
+        it.y2 = y2;
+      });
+    });
+    ctx.save();
+    items.forEach(it=>{
+      const x1 = it.cx + it.outerR*it.cos, y1 = it.cy + it.outerR*it.sin;
+      const x2 = it.cx + (it.outerR+18*PIE_LABEL_SCALE)*it.cos, y2 = it.y2;
+      const x3 = x2 + it.side*20*PIE_LABEL_SCALE;
+      ctx.strokeStyle = '#B9A6A3';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y2);
+      ctx.stroke();
+      ctx.fillStyle = '#241615';
+      ctx.font = '700 '+PIE_LABEL_FONT_PX+'px Inter, sans-serif';
+      ctx.textAlign = it.side>0 ? 'left' : 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(valueFmt(it.value), x3 + it.side*4*PIE_LABEL_SCALE, y2);
+    });
+    ctx.restore();
+  }
+};
+
+/* ============================================================
+   RENDER: GERAL
+   ============================================================ */
+function renderGeral(records, ordens){
+  // Emenda antes da atualização do sistema: valor congelado, vindo das ordens de pagamento
+  // (fonte antiga). Fica só para consulta — nunca entra em nenhuma soma nova.
+  const totalCompras = records.filter(r=>r.sis==='Compras').reduce((s,r)=>s+r.v,0);
+  const emendaAntiga = ordens.reduce((s,o)=>s+o.v,0);
+  // Emenda após a atualização do sistema: a partir de agora, registrada item a item (Valor Negociado),
+  // do mesmo jeito que Compras — é essa que entra no Total Geral.
+  const emendaNova = records.filter(r=>r.sis==='Emenda').reduce((s,r)=>s+r.v,0);
+  const totalGeralNovo = totalCompras + emendaNova;
+  const notasUnicas = new Set(records.map(r=>r.i+'-'+r.n)).size;
+
+  document.getElementById('kpiCompras').textContent = fmtBRLfull(totalCompras);
+  document.getElementById('kpiEmenda').textContent = fmtBRLfull(emendaAntiga);
+  document.getElementById('kpiEmendaNova').textContent = fmtBRLfull(emendaNova);
+  document.getElementById('kpiTotalGeralNovo').textContent = fmtBRLfull(totalGeralNovo);
+  document.getElementById('kpiLancamentos').textContent = fmtInt(notasUnicas);
+  document.getElementById('kpiTicketMedio').textContent = notasUnicas ? fmtBRLfull(totalCompras/notasUnicas) : '—';
+
+  // "Desconto aplicado em nota": diferença entre o preço de tabela (vl_item) e o valor negociado
+  // (vl_negociado), somada apenas onde de fato houve negociação (vl_negociado > 0).
+  const negociados = comprasItensForEconomia(records);
+  const somaTabela = negociados.reduce((s,r)=>s+r.vi,0);
+  const economia = negociados.reduce((s,r)=>s+(r.vi-r.vn),0);
+  document.getElementById('kpiEconomia').textContent = fmtBRLfull(economia);
+  document.getElementById('kpiEconomiaPct').textContent = somaTabela>0 ? `${((economia/somaTabela)*100).toFixed(1)}% abaixo do preço de tabela` : '';
+
+  const prev = getPreviousPeriodTotals();
+  document.getElementById('kpiComprasDelta').innerHTML = pctDeltaBadge(totalCompras, prev&&prev.compras, prev&&prev.hasData);
+  document.getElementById('kpiEmendaDelta').innerHTML = pctDeltaBadge(emendaAntiga, prev&&prev.emenda, prev&&prev.hasData);
+
+  // aviso de qualidade de dado: quanto dos itens de Compras não têm insumo/fornecedor identificado
+  const comprasItens = records.filter(r=>r.sis==='Compras');
+  const semInfo = comprasItens.filter(r=>r.gen==='Não informado' || r.forn==='Não informado').length;
+  const dqEl = document.getElementById('dqNote');
+  if(comprasItens.length && semInfo/comprasItens.length > 0.02){
+    dqEl.style.display = 'block';
+    dqEl.textContent = `Atenção: ${((semInfo/comprasItens.length)*100).toFixed(1)}% dos itens de compras do período (${fmtInt(semInfo)} de ${fmtInt(comprasItens.length)}) estão sem fornecedor ou insumo identificado no sistema de origem — vale revisar o cadastro.`;
+  } else {
+    dqEl.style.display = 'none';
+  }
+
+  const catRecords = records.filter(r=>r.sis==='Compras');
+  const catMap = sumByKey(catRecords, r=>r.cat);
+  const catEntries = [...catMap.entries()].sort((a,b)=>b[1]-a[1]);
+  makeChart('chartCategoriaDonut', {
+    type:'doughnut',
+    data:{ labels: catEntries.map(e=>e[0]),
+      datasets:[{ data: catEntries.map(e=>e[1]), backgroundColor: catEntries.map(e=>CATEGORY_COLORS[e[0]]||'#999'), borderWidth:2, borderColor:'#fff' }]},
+    options:{ maintainAspectRatio:false, radius:'62%', layout:{padding:{top:30,bottom:30,left:14,right:14}},
+      plugins:{ legend:{position:'right', labels:{boxWidth:10,padding:10}},
+      tooltip:{callbacks:{label:(c)=>` ${c.label}: ${fmtBRLfull(c.parsed)}`}},
+      datalabels:{display:false},
+      pieLeaderLines:{} } },
+    plugins:[pieLeaderLinesPlugin]
+  });
+
+  makeChart('chartOrigemPie', {
+    type:'pie',
+    data:{ labels:['Compras','Emenda'], datasets:[{ data:[totalCompras,emendaNova], backgroundColor:['#A32B24','#B5551E'], borderWidth:2, borderColor:'#fff' }]},
+    options:{ maintainAspectRatio:false, radius:'62%', layout:{padding:{top:30,bottom:30,left:14,right:14}},
+      plugins:{ legend:{position:'right'},
+      tooltip:{callbacks:{label:(c)=>` ${c.label}: ${fmtBRLfull(c.parsed)}`}},
+      datalabels:{display:false},
+      pieLeaderLines:{} } },
+    plugins:[pieLeaderLinesPlugin]
+  });
+
+  const insumoMap = sumByKey(records, r=>r.gen);
+  const topInsumos = topN(insumoMap, 10);
+  makeChart('chartTopInsumosGeral', {
+    type:'bar',
+    data:{ labels: topInsumos.map(e=>e[0].length>38?e[0].slice(0,38)+'…':e[0]),
+      datasets:[{ data: topInsumos.map(e=>e[1]), backgroundColor:'#A32B24', borderRadius:2 }]},
+    options:{ indexAxis:'y', maintainAspectRatio:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:(c)=>` ${fmtBRLfull(c.parsed.x)}`}},
+      datalabels: DL({ anchor:'end', align:'end' }) },
+      layout:{ padding:{ right:110 } },
+      scales:{ x:{ ticks:{ callback:v=>fmtBRL(v) } } } }
+  });
+}
+
+
+/* ============================================================
+   RENDER: ANALISE
+   ============================================================ */
+function renderAnalise(records, ordens){
+  const compras = records.filter(r=>r.sis==='Compras');
+  const emendaItens = records.filter(r=>r.sis==='Emenda'); // emenda pós-atualização (item a item)
+
+  // monthly totals across all years present (for chosen filters), keyed by year-month
+  function monthlySeries(recs, dayFn, valFn){
+    const map = new Map();
+    for(const r of recs){
+      const d = dateFromDayIndex(dayFn(r));
+      const key = d.getFullYear()+'-'+String(d.getMonth()).padStart(2,'0');
+      map.set(key, (map.get(key)||0)+valFn(r));
+    }
+    return map;
+  }
+  const comprasSeries = monthlySeries(compras, r=>r.day, r=>r.v);
+  // Evolução da Emenda junta as duas fontes numa linha do tempo só: ordens de pagamento
+  // (método antigo, até a atualização do sistema) + item a item (método novo, a partir
+  // do mês em que passou a ser segregado) — pro gestor ver a evolução contínua, sem buraco.
+  const emendaSeriesAntiga = monthlySeries(ordens, o=>o.day, o=>o.v);
+  const emendaSeriesNova = monthlySeries(emendaItens, r=>r.day, r=>r.v);
+  const emendaSeries = new Map();
+  for(const [k,v] of emendaSeriesAntiga) emendaSeries.set(k, (emendaSeries.get(k)||0)+v);
+  for(const [k,v] of emendaSeriesNova) emendaSeries.set(k, (emendaSeries.get(k)||0)+v);
+  const sortedKeys = [...new Set([...comprasSeries.keys(),...emendaSeries.keys()])].sort();
+  const labelFor = k=>{ const [y,m]=k.split('-'); return MONTH_ABBR[+m]+'/'+y.slice(2); };
+
+  makeChart('chartEvolucaoCompras', {
+    type:'bar',
+    data:{ labels: sortedKeys.map(labelFor),
+      datasets:[{ label:'Compras', data: sortedKeys.map(k=>comprasSeries.get(k)||0), backgroundColor:'#A32B24', borderRadius:3 }]},
+    options:{ maintainAspectRatio:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:(c)=>` ${fmtBRLfull(c.parsed.y)}`}},
+      datalabels: smartBarDL(sortedKeys.map(k=>comprasSeries.get(k)||0), { rotation:-90, font:{size:12,weight:'700'} }) },
+      layout:{ padding:{ top:14 } },
+      scales:{ y:{ ticks:{ callback:v=>fmtBRL(v) } } } }
+  });
+  makeChart('chartEvolucaoEmenda', {
+    type:'bar',
+    data:{ labels: sortedKeys.map(labelFor),
+      datasets:[{ label:'Emenda', data: sortedKeys.map(k=>emendaSeries.get(k)||0), backgroundColor:'#B5551E', borderRadius:3 }]},
+    options:{ maintainAspectRatio:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:(c)=>` ${fmtBRLfull(c.parsed.y)}`}},
+      datalabels: smartBarDL(sortedKeys.map(k=>emendaSeries.get(k)||0), { rotation:-90, font:{size:12,weight:'700'} }) },
+      layout:{ padding:{ top:14 } },
+      scales:{ y:{ ticks:{ callback:v=>fmtBRL(v) } } } }
+  });
+
+  // KPI: média mensal para até 2 anos mais recentes presentes no dataset FILTRADO (compras)
+  const years = [...new Set(sortedKeys.map(k=>k.split('-')[0]))].sort().reverse();
+  const y1 = years[0], y2 = years[1];
+  function avgForYear(y){
+    if(!y) return null;
+    const keys = sortedKeys.filter(k=>k.startsWith(y+'-'));
+    if(keys.length===0) return null;
+    const total = keys.reduce((s,k)=>s+(comprasSeries.get(k)||0),0);
+    return total/keys.length;
+  }
+  const a1 = avgForYear(y1), a2 = avgForYear(y2);
+  document.getElementById('mediaLabel1').textContent = y1?`Média mensal ${y1}`:'Média mensal —';
+  document.getElementById('mediaLabel2').textContent = y2?`Média mensal ${y2}`:'Média mensal —';
+  document.getElementById('kpiMedia1').textContent = a1!=null?fmtBRLfull(a1):'—';
+  document.getElementById('kpiMedia2').textContent = a2!=null?fmtBRLfull(a2):'—';
+
+  let pico = null;
+  for(const k of sortedKeys){ const v=comprasSeries.get(k)||0; if(!pico||v>pico.v) pico={k,v}; }
+  document.getElementById('kpiMesPico').textContent = pico?labelFor(pico.k):'—';
+  document.getElementById('kpiEmendaPeriodo').textContent = fmtBRLfull(ordens.reduce((s,o)=>s+o.v,0) + emendaItens.reduce((s,r)=>s+r.v,0));
+
+  const projecao = computeProjection(comprasSeries);
+  document.getElementById('kpiProjecao').textContent = projecao!=null ? fmtBRLfull(projecao) : '—';
+}
+
+/* ============================================================
+   RENDER: FORNECEDORES
+   ============================================================ */
+function renderFornecedores(records, ordens){
+  const fornMap = sumByKey(records, r=>r.forn);
+  for(const o of ordens){ fornMap.set(o.forn, (fornMap.get(o.forn)||0)+o.v); }
+  document.getElementById('kpiFornAtivos').textContent = fmtInt(fornMap.size);
+
+  const top = topN(fornMap, 15);
+  if(top.length){
+    document.getElementById('kpiMaiorForn').textContent = top[0][0];
+    document.getElementById('kpiMaiorFornValor').textContent = fmtBRLfull(top[0][1]);
+  } else {
+    document.getElementById('kpiMaiorForn').textContent = '—';
+    document.getElementById('kpiMaiorFornValor').textContent = '';
+  }
+  const totalGasto = records.reduce((s,r)=>s+r.v,0) + ordens.reduce((s,o)=>s+o.v,0);
+  document.getElementById('kpiMediaForn').textContent = fornMap.size? fmtBRLfull(totalGasto/fornMap.size) : '—';
+
+  const top5Sum = top.slice(0,5).reduce((s,e)=>s+e[1],0);
+  document.getElementById('kpiConcentracao').textContent = totalGasto ? (top5Sum/totalGasto*100).toFixed(1)+'%' : '—';
+
+  const topRev = top.slice();
+  makeChart('chartTopFornecedores', {
+    type:'bar',
+    data:{ labels: topRev.map(e=>e[0].length>34?e[0].slice(0,34)+'…':e[0]),
+      datasets:[{ data: topRev.map(e=>e[1]), backgroundColor:'#8A4A2C', borderRadius:2 }]},
+    options:{ indexAxis:'y', maintainAspectRatio:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:(c)=>` ${fmtBRLfull(c.parsed.x)}`}},
+      datalabels: DL({ anchor:'end', align:'end' }) },
+      layout:{ padding:{ right:110 } },
+      scales:{ x:{ ticks:{ callback:v=>fmtBRL(v) } } } }
+  });
+
+  function monthlySeries(recs){
+    const map = new Map();
+    for(const r of recs){
+      const d = dateFromDayIndex(r.day);
+      const key = d.getFullYear()+'-'+String(d.getMonth()).padStart(2,'0');
+      map.set(key, (map.get(key)||0)+r.v);
+    }
+    return map;
+  }
+  // Mesmo critério da "Evolução mensal — Compras": só Compras, pra os dois gráficos baterem
+  // o mesmo número no mesmo mês (antes misturava Compras+Emenda aqui, e só setembro —
+  // primeiro mês com Emenda lançada item a item — ficava divergente dos outros gráficos).
+  const series = monthlySeries(records.filter(r=>r.sis==='Compras'));
+  const keys = [...series.keys()].sort();
+  const labelFor = k=>{ const [y,m]=k.split('-'); return MONTH_ABBR[+m]+'/'+y.slice(2); };
+  makeChart('chartFornMensal', {
+    type:'line',
+    data:{ labels: keys.map(labelFor),
+      datasets:[{ data: keys.map(k=>series.get(k)), borderColor:'#8A4A2C', backgroundColor:'rgba(138,74,44,0.12)', fill:true, tension:.25, pointRadius:3 }]},
+    options:{ maintainAspectRatio:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:(c)=>` ${fmtBRLfull(c.parsed.y)}`}},
+      datalabels: DL({
+        anchor: (ctx)=> ctx.dataIndex%2===0 ? 'end':'start',
+        align:  (ctx)=> ctx.dataIndex%2===0 ? 'end':'start',
+        offset: 26, rotation:-90, font:{size:11,weight:'700'}, clip:false
+      }),
+      lineLeaderLines: { offset: 24 } },
+      layout:{ padding:{ top:46, bottom:40 } },
+      scales:{ y:{ ticks:{ callback:v=>fmtBRL(v) } } } },
+    plugins:[lineLeaderLinesPlugin]
+  });
+
+  renderChurn(records);
+}
+
+/* ============================================================
+   ALERTAS DE CONSUMO (quantidade) POR INSUMO
+   Compara a quantidade do mês mais recente com a média mensal
+   histórica de cada insumo. Recalcula sozinho a cada novo lote,
+   já que "mês mais recente" e "histórico" são sempre relidos dos
+   dados atuais — sem precisar guardar nada à parte.
+   ============================================================ */
+const ALERT_THRESHOLD_PCT = 20;
+function computeQtyAlerts(records){
+  const byProduct = new Map(); // gen -> Map(mesKey -> qtd)
+  for(const r of records){
+    if(!r.q) continue;
+    const d = dateFromDayIndex(r.day);
+    const mk = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    if(!byProduct.has(r.gen)) byProduct.set(r.gen, new Map());
+    const m = byProduct.get(r.gen);
+    m.set(mk, (m.get(mk)||0)+r.q);
+  }
+  let latestMonth = null;
+  byProduct.forEach(m=>{ m.forEach((_,mk)=>{ if(!latestMonth || mk>latestMonth) latestMonth = mk; }); });
+  if(!latestMonth) return { latestMonth:null, alerts:[] };
+
+  const alerts = [];
+  byProduct.forEach((monthMap, produto)=>{
+    if(!monthMap.has(latestMonth)) return;
+    const latestQty = monthMap.get(latestMonth);
+    const priorEntries = [...monthMap.entries()].filter(([mk])=>mk!==latestMonth);
+    if(priorEntries.length < 2) return; // exige ao menos 2 meses de histórico antes, pra não alarmar por item novo/raro
+    const avgQty = priorEntries.reduce((s,[,v])=>s+v,0)/priorEntries.length;
+    if(avgQty<=0) return;
+    const pct = ((latestQty-avgQty)/avgQty)*100;
+    if(pct > ALERT_THRESHOLD_PCT){
+      alerts.push({ produto, latestQty, avgQty, pct, meses:priorEntries.length });
+    }
+  });
+  alerts.sort((a,b)=>b.pct-a.pct);
+  return { latestMonth, alerts };
+}
+let LAST_ALERTAS_QTD = { mesLabel:'', alerts:[] };
+let LAST_ALERTAS_PRECO = { mesLabel:'', alerts:[] };
+
+function renderAlertasQtd(records){
+  const { latestMonth, alerts } = computeQtyAlerts(records);
+  const el = document.getElementById('alertasQtdContent');
+  if(!latestMonth){
+    el.innerHTML = '<div class="alerts-empty">Sem dados suficientes ainda.</div>';
+    document.getElementById('kpiAlertasQtd').textContent = '—';
+    document.getElementById('kpiAlertasQtdMes').textContent = '';
+    LAST_ALERTAS_QTD = { mesLabel:'', alerts:[] };
+    return;
+  }
+  const [y,m] = latestMonth.split('-');
+  const mesLabel = MONTH_NAME[+m-1]+'/'+y;
+  LAST_ALERTAS_QTD = { mesLabel, alerts };
+  document.getElementById('kpiAlertasQtd').textContent = fmtInt(alerts.length);
+  document.getElementById('kpiAlertasQtdMes').textContent = 'referente a '+mesLabel;
+  if(alerts.length===0){
+    el.innerHTML = `<div class="alerts-empty">Nenhum insumo com compra acima de ${ALERT_THRESHOLD_PCT}% da média em ${mesLabel}.</div>`;
+    return;
+  }
+  el.innerHTML = `<table class="alerts">
+    <thead><tr><th>Insumo</th><th>Média mensal histórica</th><th>Quantidade em ${mesLabel}</th><th>Variação</th></tr></thead>
+    <tbody>
+      ${alerts.slice(0,20).map(a=>`<tr>
+        <td>${a.produto}</td>
+        <td>${fmtInt(Math.round(a.avgQty))} un. <span style="color:var(--ink-faint);font-size:11px;">(${a.meses} meses)</span></td>
+        <td>${fmtInt(a.latestQty)} un.</td>
+        <td><span class="pct-badge">▲ ${a.pct.toFixed(0)}%</span></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+/* ============================================================
+   ECONOMIA POR NEGOCIAÇÃO
+   ============================================================ */
+function comprasItensForEconomia(records){
+  // só itens de Compras onde de fato houve negociação (vl_negociado > 0)
+  return records.filter(r=> r.sis==='Compras' && r.vn>0);
+}
+
+/* ============================================================
+   ALERTA DE PREÇO UNITÁRIO POR INSUMO
+   Mesma lógica do alerta de consumo, mas usando o preço médio
+   ponderado (valor/quantidade) de cada mês em vez da quantidade.
+   ============================================================ */
+function computePriceAlerts(records){
+  const byProduct = new Map(); // gen -> Map(mesKey -> {v,q})
+  for(const r of records){
+    if(!r.q || !r.v) continue;
+    const d = dateFromDayIndex(r.day);
+    const mk = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    if(!byProduct.has(r.gen)) byProduct.set(r.gen, new Map());
+    const m = byProduct.get(r.gen);
+    const cur = m.get(mk) || {v:0,q:0};
+    cur.v += r.v; cur.q += r.q;
+    m.set(mk, cur);
+  }
+  let latestMonth = null;
+  byProduct.forEach(m=>{ m.forEach((_,mk)=>{ if(!latestMonth || mk>latestMonth) latestMonth = mk; }); });
+  if(!latestMonth) return { latestMonth:null, alerts:[] };
+
+  const alerts = [];
+  byProduct.forEach((monthMap, produto)=>{
+    if(!monthMap.has(latestMonth)) return;
+    const priceOf = (mk)=>{ const e=monthMap.get(mk); return e.q>0 ? e.v/e.q : null; };
+    const latestPrice = priceOf(latestMonth);
+    if(latestPrice==null) return;
+    const priorMonths = [...monthMap.keys()].filter(mk=>mk!==latestMonth);
+    const priorPrices = priorMonths.map(priceOf).filter(p=>p!=null);
+    if(priorPrices.length < 2) return;
+    const avgPrice = priorPrices.reduce((s,v)=>s+v,0)/priorPrices.length;
+    if(avgPrice<=0) return;
+    const pct = ((latestPrice-avgPrice)/avgPrice)*100;
+    if(pct > ALERT_THRESHOLD_PCT){
+      alerts.push({ produto, latestPrice, avgPrice, pct, meses:priorPrices.length });
+    }
+  });
+  alerts.sort((a,b)=>b.pct-a.pct);
+  return { latestMonth, alerts };
+}
+function renderAlertasPreco(records){
+  const { latestMonth, alerts } = computePriceAlerts(records);
+  const el = document.getElementById('alertasPrecoContent');
+  if(!latestMonth){ el.innerHTML = '<div class="alerts-empty">Sem dados suficientes ainda.</div>'; LAST_ALERTAS_PRECO = { mesLabel:'', alerts:[] }; return; }
+  const [y,m] = latestMonth.split('-');
+  const mesLabel = MONTH_NAME[+m-1]+'/'+y;
+  LAST_ALERTAS_PRECO = { mesLabel, alerts };
+  if(alerts.length===0){
+    el.innerHTML = `<div class="alerts-empty">Nenhum insumo com preço unitário acima de ${ALERT_THRESHOLD_PCT}% da média em ${mesLabel}.</div>`;
+    return;
+  }
+  el.innerHTML = `<table class="alerts">
+    <thead><tr><th>Insumo</th><th>Preço médio histórico</th><th>Preço em ${mesLabel}</th><th>Variação</th></tr></thead>
+    <tbody>
+      ${alerts.slice(0,20).map(a=>`<tr>
+        <td>${a.produto}</td>
+        <td>${fmtBRLfull(a.avgPrice)} <span style="color:var(--ink-faint);font-size:11px;">(${a.meses} meses)</span></td>
+        <td>${fmtBRLfull(a.latestPrice)}</td>
+        <td><span class="pct-badge">▲ ${a.pct.toFixed(0)}%</span></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+/* ============================================================
+   FORNECEDORES QUE PARARAM DE COMPRAR (churn)
+   Um fornecedor é considerado "regular" se apareceu em boa parte
+   dos meses de uma janela anterior; se ele some dos 2 meses mais
+   recentes, entra na lista de alerta.
+   ============================================================ */
+function computeSupplierChurn(records){
+  const monthsByForn = new Map();
+  const allMonths = new Set();
+  for(const r of records){
+    const d = dateFromDayIndex(r.day);
+    const mk = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    allMonths.add(mk);
+    if(!monthsByForn.has(r.forn)) monthsByForn.set(r.forn, new Set());
+    monthsByForn.get(r.forn).add(mk);
+  }
+  const sortedMonths = [...allMonths].sort();
+  if(sortedMonths.length < 5) return { churn:[], janela:0 };
+  const latest2 = sortedMonths.slice(-2);
+  const priorWindow = sortedMonths.slice(-7,-2);
+  if(priorWindow.length < 3) return { churn:[], janela:0 };
+
+  const churn = [];
+  monthsByForn.forEach((monthsSet, forn)=>{
+    const presentInPrior = priorWindow.filter(mk=>monthsSet.has(mk)).length;
+    const presentInLatest2 = latest2.filter(mk=>monthsSet.has(mk)).length;
+    const regular = presentInPrior >= Math.ceil(priorWindow.length*0.8); // presente em pelo menos 80% dos meses anteriores
+    if(regular && presentInLatest2===0){
+      const lastMonth = [...monthsSet].sort().pop();
+      churn.push({ forn, lastMonth, mesesRegular: presentInPrior, janela: priorWindow.length });
+    }
+  });
+  churn.sort((a,b)=> a.lastMonth < b.lastMonth ? -1 : (a.lastMonth>b.lastMonth?1:0));
+  return { churn, janela: priorWindow.length };
+}
+function renderChurn(records){
+  const { churn, janela } = computeSupplierChurn(records);
+  const el = document.getElementById('churnContent');
+  if(janela===0){
+    el.innerHTML = '<div class="alerts-empty">Ainda não há histórico suficiente (precisa de pelo menos ~7 meses de dados) para detectar isso.</div>';
+    return;
+  }
+  if(churn.length===0){
+    el.innerHTML = '<div class="alerts-empty">Nenhum fornecedor regular sumiu dos últimos 2 meses.</div>';
+    return;
+  }
+  const labelMes = mk=>{ const [y,m]=mk.split('-'); return MONTH_NAME[+m-1]+'/'+y; };
+  el.innerHTML = `<table class="alerts">
+    <thead><tr><th>Fornecedor</th><th>Comprava em</th><th>Última compra</th></tr></thead>
+    <tbody>
+      ${churn.slice(0,20).map(c=>`<tr>
+        <td>${c.forn}</td>
+        <td>${c.mesesRegular} de ${c.janela} meses anteriores</td>
+        <td><span class="pct-badge" style="background:var(--line-soft);color:var(--ink-soft);">${labelMes(c.lastMonth)}</span></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+/* ============================================================
+   PROJEÇÃO SIMPLES DO PRÓXIMO MÊS (média dos últimos 3 meses)
+   ============================================================ */
+function computeProjection(monthlySeriesMap){
+  const keys = [...monthlySeriesMap.keys()].sort();
+  const lastN = keys.slice(-3);
+  if(lastN.length===0) return null;
+  return lastN.reduce((s,k)=>s+monthlySeriesMap.get(k),0)/lastN.length;
+}
+
+/* ============================================================
+   RENDER: INSUMOS
+   ============================================================ */
+function renderInsumos(records){
+  const insumoMap = sumByKey(records, r=>r.gen);
+  const top = topN(insumoMap, 12);
+  if(top.length){
+    document.getElementById('kpiTopInsumo').textContent = top[0][0];
+    document.getElementById('kpiTopInsumoValor').textContent = fmtBRLfull(top[0][1]);
+  } else {
+    document.getElementById('kpiTopInsumo').textContent = '—';
+    document.getElementById('kpiTopInsumoValor').textContent = '';
+  }
+  document.getElementById('kpiInsumosDistintos').textContent = fmtInt(insumoMap.size);
+
+  const catMap = sumByKey(records, r=>r.cat);
+  const catEntries = [...catMap.entries()].sort((a,b)=>b[1]-a[1]);
+  makeChart('chartCategoriaDonut2', {
+    type:'doughnut',
+    data:{ labels: catEntries.map(e=>e[0]),
+      datasets:[{ data: catEntries.map(e=>e[1]), backgroundColor: catEntries.map(e=>CATEGORY_COLORS[e[0]]||'#999'), borderWidth:2, borderColor:'#fff' }]},
+    options:{ maintainAspectRatio:false, radius:'62%', layout:{padding:{top:30,bottom:30,left:14,right:14}},
+      plugins:{ legend:{position:'right', labels:{boxWidth:10,padding:10}},
+      tooltip:{callbacks:{label:(c)=>` ${c.label}: ${fmtBRLfull(c.parsed)}`}},
+      datalabels:{display:false},
+      pieLeaderLines:{} } },
+    plugins:[pieLeaderLinesPlugin]
+  });
+
+  const topRev = top.slice();
+  makeChart('chartTopInsumos2', {
+    type:'bar',
+    data:{ labels: topRev.map(e=>e[0].length>32?e[0].slice(0,32)+'…':e[0]),
+      datasets:[{ data: topRev.map(e=>e[1]), backgroundColor:'#54724A', borderRadius:2 }]},
+    options:{ indexAxis:'y', maintainAspectRatio:false, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:(c)=>` ${fmtBRLfull(c.parsed.x)}`}},
+      datalabels: DL({ anchor:'end', align:'end' }) },
+      layout:{ padding:{ right:110 } },
+      scales:{ x:{ ticks:{ callback:v=>fmtBRL(v) } } } }
+  });
+
+  // categoria por ano (grouped bar)
+  const years = [...new Set(records.map(r=>dateFromDayIndex(r.day).getFullYear()))].sort();
+  const cats = [...new Set(records.map(r=>r.cat))].sort();
+  const datasets = cats.map(cat=>({
+    label:cat,
+    backgroundColor: CATEGORY_COLORS[cat]||'#999',
+    data: years.map(y=>records.filter(r=>r.cat===cat && dateFromDayIndex(r.day).getFullYear()===y).reduce((s,r)=>s+r.v,0))
+  }));
+  makeChart('chartCategoriaPorAno', {
+    type:'bar',
+    data:{ labels: years.map(String), datasets },
+    options:{ maintainAspectRatio:false, plugins:{ legend:{position:'bottom', labels:{boxWidth:10}},
+      tooltip:{callbacks:{label:(c)=>` ${c.dataset.label}: ${fmtBRLfull(c.parsed.y)}`}},
+      datalabels: smartBarDL(datasets.flatMap(d=>d.data), { font:{size:10,weight:'700'}, rotation:-90 }) },
+      layout:{ padding:{ top:34 } },
+      scales:{ y:{ ticks:{ callback:v=>fmtBRL(v) } } } }
+  });
+
+  renderAlertasQtd(records);
+  renderAlertasPreco(records);
+}
+const VIEW_TITLES = { geral:'Visão Geral', analise:'Análise Mensal', fornecedores:'Fornecedores', insumos:'Insumos', tabela:'Tabela Detalhada', consumo:'Controle de Consumo', dados:'Dados & Upload' };
+function renderCurrentView(){
+  if(ALL_RECORDS.length===0 && ALL_ORDENS.length===0) return;
+  try{
+    const records = getFiltered();
+    const ordens = getFilteredOrdens();
+    if(currentView==='geral') renderGeral(records, ordens);
+    else if(currentView==='analise') renderAnalise(records, ordens);
+    else if(currentView==='fornecedores') renderFornecedores(records, ordens);
+    else if(currentView==='insumos') renderInsumos(records);
+    else if(currentView==='tabela') renderTabela();
+    updateSidebarFooter();
+  }catch(e){
+    console.error('renderCurrentView error', e);
+  }
+}
+function updateSidebarFooter(){
+  document.getElementById('totalRowsLabel').textContent = fmtInt(ALL_RECORDS.length+ALL_ORDENS.length)+' registros';
+  let minDay=Infinity,maxDay=-Infinity;
+  for(const r of ALL_RECORDS){ if(r.day<minDay)minDay=r.day; if(r.day>maxDay)maxDay=r.day; }
+  for(const o of ALL_ORDENS){ if(o.day<minDay)minDay=o.day; if(o.day>maxDay)maxDay=o.day; }
+  if(isFinite(minDay)){
+    const d1=dateFromDayIndex(minDay), d2=dateFromDayIndex(maxDay);
+    const f = d=>String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+    document.getElementById('periodoLabel').textContent = f(d1)+' – '+f(d2);
+  }
+}
+
+function switchView(view){
+  currentView = view;
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.getElementById('viewTitle').textContent = VIEW_TITLES[view];
+  if(view==='tabela'){ tablePage=1; renderTabela(); }
+  else if(view==='consumo'){ consumoPage=1; renderConsumoTable(); }
+  else if(view!=='dados') renderCurrentView();
+}
+
+/* ============================================================
+   TABELA DETALHADA (linha a linha, paginada)
+   ============================================================ */
+function buildUnifiedRows(){
+  const items = getFiltered();
+  const ordens = getFilteredOrdens();
+  const rows = [];
+  for(const r of items){
+    rows.push({ day:r.day, forn:r.forn, gen:r.gen, prod:r.prod, qtd:r.q, valor:r.v, situacao:r.sis });
+  }
+  for(const o of ordens){
+    // Ordens de emenda não têm insumo/quantidade — mostrado como "—". Situação é sempre "Emenda".
+    rows.push({ day:o.day, forn:o.forn, gen:null, prod:null, qtd:null, valor:o.v, situacao:'Emenda' });
+  }
+  rows.sort((a,b)=>b.day-a.day);
+  return rows;
+}
+let tableSearchTerm = '';
+let consumoSearchTerm = '';
+function renderTabela(){
+  let rows = buildUnifiedRows();
+  if(tableSearchTerm){
+    const q = tableSearchTerm.toLowerCase();
+    rows = rows.filter(r =>
+      r.forn.toLowerCase().includes(q) ||
+      (r.gen && r.gen.toLowerCase().includes(q)) ||
+      (r.prod && r.prod.toLowerCase().includes(q))
+    );
+  }
+  const total = rows.length;
+
+  // Resumo da busca: quantidade total comprada, nº de lançamentos, valor total e a média
+  // consumida por mês (cruzando com o Controle de Consumo), do que foi encontrado
+  // (considera tanto o nome genérico quanto o nome comercial, já que a busca casa com os dois).
+  const summaryEl = document.getElementById('tabelaSearchSummary');
+  if(tableSearchTerm && total>0){
+    const qtdTotal = rows.reduce((s,r)=>s+(r.qtd||0),0);
+    const valorTotal = rows.reduce((s,r)=>s+(r.valor||0),0);
+    const consumo = computeMediaConsumidaForSearch(tableSearchTerm);
+    const mediaTxt = consumo && consumo.media!=null ? `${fmtInt(Math.round(consumo.media))} un./mês` : 'sem dado de consumo';
+    summaryEl.style.display = 'flex';
+    summaryEl.className = 'search-summary';
+    summaryEl.innerHTML = `
+      <div class="item">Quantidade total comprada<b>${fmtInt(qtdTotal)} un.</b></div>
+      <div class="item">Lançamentos encontrados<b>${fmtInt(total)}</b></div>
+      <div class="item">Valor total somado<b>${fmtBRLfull(valorTotal)}</b></div>
+      <div class="item">Média consumida (mensal)<b>${mediaTxt}</b></div>
+    `;
+  } else {
+    summaryEl.style.display = 'none';
+    summaryEl.innerHTML = '';
+  }
+
+  const totalPages = Math.max(1, Math.ceil(total/TABLE_PAGE_SIZE));
+  if(tablePage>totalPages) tablePage = totalPages;
+  if(tablePage<1) tablePage = 1;
+  const start = (tablePage-1)*TABLE_PAGE_SIZE;
+  const pageRows = rows.slice(start, start+TABLE_PAGE_SIZE);
+  const body = document.getElementById('tabelaBody');
+  body.innerHTML = pageRows.map(r=>{
+    const tag = r.situacao==='Compras' ? '<span class="tag compras">Compras</span>' : '<span class="tag emenda">Emenda</span>';
+    let valorCell;
+    if(r.qtd!=null && r.qtd>0){
+      const unit = r.valor / r.qtd;
+      valorCell = `<span class="val-tip" data-tip="Valor unitário: ${fmtBRLfull(unit)}">${fmtBRLfull(r.valor)}</span>`;
+    } else {
+      valorCell = fmtBRLfull(r.valor);
+    }
+    return `<tr><td>${fmtDateBR(r.day)}</td><td>${r.forn}</td><td>${r.gen||'—'}</td><td>${r.prod||'—'}</td><td>${r.qtd!=null?fmtInt(r.qtd):'—'}</td><td>${valorCell}</td><td>${tag}</td></tr>`;
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--ink-faint);padding:30px;">Nenhum registro no período/filtro/busca selecionado.</td></tr>';
+  document.getElementById('tabelaResumo').textContent = `${fmtInt(total)} registro(s)${tableSearchTerm?' encontrados':' no filtro atual'}`;
+  document.getElementById('tabelaPageLabel').textContent = `Página ${tablePage} de ${totalPages}`;
+  document.getElementById('tabelaPrev').disabled = tablePage<=1;
+  document.getElementById('tabelaNext').disabled = tablePage>=totalPages;
+}
+
+/* ============================================================
+   CONTROLE DE CONSUMO (compra x saída), na aba Tabela Detalhada
+   Junta todos os lotes de consumo carregados, agrupando de novo por
+   (genérico+comercial+tipo) — assim um mesmo produto que apareceu em
+   mais de um arquivo mensal soma certinho numa linha só.
+   Qtd. comprada é calculada cruzando com ALL_RECORDS (Compras) pelo
+   nome do produto, dentro do período coberto por aquele registro.
+   ============================================================ */
+let consumoPage = 1;
+const CONSUMO_PAGE_SIZE = 50;
+function predominantUnit(unidadesMap){
+  let best=null, bestQty=-1;
+  for(const un in unidadesMap){ if(unidadesMap[un]>bestQty){ best=un; bestQty=unidadesMap[un]; } }
+  return best || '—';
+}
+// Usado no resumo de busca da Tabela Detalhada: cruza o termo buscado com o Controle de
+// Consumo e devolve a média mensal consumida (soma consumida / nº de meses cobertos).
+function computeMediaConsumidaForSearch(term){
+  if(!term) return null;
+  const q = term.toLowerCase();
+  const rows = buildConsumoRows().filter(r => (r.gen && r.gen.toLowerCase().includes(q)) || r.marcas.some(m=>m.toLowerCase().includes(q)));
+  if(rows.length===0) return null;
+  let totalQty=0, pmin=null, pmax=null;
+  rows.forEach(r=>{
+    totalQty += r.qtdConsumida;
+    if(r.pmin && (!pmin || r.pmin<pmin)) pmin = r.pmin;
+    if(r.pmax && (!pmax || r.pmax>pmax)) pmax = r.pmax;
+  });
+  if(!pmin || !pmax) return { totalQty, meses:null, media:null };
+  const y1=+pmin.slice(0,4), m1=+pmin.slice(4,6), y2=+pmax.slice(0,4), m2=+pmax.slice(4,6);
+  const meses = (y2-y1)*12 + (m2-m1) + 1;
+  const media = meses>0 ? totalQty/meses : null;
+  return { totalQty, meses, media };
+}
+function buildConsumoRows(){
+  const norm = s => String(s||'').trim().toLowerCase();
+  // Agrupa por NOME GENÉRICO + TIPO (não por marca/nome comercial) — um mesmo remédio
+  // genérico costuma vir de várias marcas/fornecedores diferentes, e tudo isso é o
+  // "mesmo produto" pra efeito de comparar quanto foi comprado x quanto foi consumido.
+  // Junta também entre lotes (arquivos de meses diferentes) que tragam o mesmo produto.
+  const agg = new Map();
+  for(const r of ALL_CONSUMO){
+    const key = norm(r.gen)+'|'+r.tipo;
+    let e = agg.get(key);
+    if(!e){ e = { gen:r.gen, marcas:new Set(), tipo:r.tipo, qty:0, pmin:r.pmin, pmax:r.pmax, unidades:{} }; agg.set(key,e); }
+    e.qty += r.qty;
+    (r.marcas||[]).forEach(m=>{ if(m && m!==r.gen) e.marcas.add(m); });
+    const un = r.unidades || {};
+    for(const u in un){ e.unidades[u] = (e.unidades[u]||0) + un[u]; }
+    if(r.pmin && (!e.pmin || r.pmin<e.pmin)) e.pmin = r.pmin;
+    if(r.pmax && (!e.pmax || r.pmax>e.pmax)) e.pmax = r.pmax;
+  }
+  // índice de compras por nome genérico, pra cruzar a quantidade comprada no mesmo período
+  const comprasIdx = new Map();
+  for(const r of ALL_RECORDS){
+    if(r.sis!=='Compras') continue;
+    const kg = norm(r.gen);
+    if(!comprasIdx.has(kg)) comprasIdx.set(kg, []);
+    comprasIdx.get(kg).push(r);
+  }
+  const periodoToDay = (p, end)=>{
+    if(!p || p.length<6) return null;
+    const y = +p.slice(0,4), m = +p.slice(4,6);
+    return end ? dayIndexOf(new Date(y, m, 0)) : dayIndexOf(new Date(y, m-1, 1));
+  };
+  const rows = [];
+  agg.forEach(e=>{
+    const minDay = periodoToDay(e.pmin, false);
+    const maxDay = periodoToDay(e.pmax, true);
+    const candidatos = comprasIdx.get(norm(e.gen)) || [];
+    let qtdComprada = 0;
+    const unidadesCompra = {};
+    candidatos.forEach(r=>{
+      if(minDay!=null && maxDay!=null && (r.day<minDay || r.day>maxDay)) return;
+      qtdComprada += r.q;
+      const u = r.un || '—';
+      unidadesCompra[u] = (unidadesCompra[u]||0) + r.q;
+    });
+    const unConsumo = predominantUnit(e.unidades);
+    const unCompra = predominantUnit(unidadesCompra);
+    // só avisa "unidade diferente" quando os dois lados têm pelo menos alguma quantidade pra comparar
+    const unidadeDivergente = (qtdComprada>0 && e.qty>0 && unConsumo!=='—' && unCompra!=='—' && unConsumo!==unCompra);
+    rows.push({
+      gen:e.gen, marcas:[...e.marcas], tipo:e.tipo, qtdConsumida:e.qty, qtdComprada,
+      pmin:e.pmin, pmax:e.pmax, unConsumo, unCompra, unidadeDivergente
+    });
+  });
+  rows.sort((a,b)=>b.qtdConsumida-a.qtdConsumida);
+  return rows;
+}
+function periodoLabel(p){
+  if(!p || p.length<6) return '—';
+  const y=p.slice(0,4), m=+p.slice(4,6);
+  return MONTH_ABBR[m-1]+'/'+y.slice(2);
+}
+function renderConsumoTable(){
+  let rows = buildConsumoRows();
+  if(consumoSearchTerm){
+    const q = consumoSearchTerm.toLowerCase();
+    rows = rows.filter(r => (r.gen&&r.gen.toLowerCase().includes(q)) || r.marcas.some(m=>m.toLowerCase().includes(q)));
+  }
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total/CONSUMO_PAGE_SIZE));
+  if(consumoPage>totalPages) consumoPage = totalPages;
+  if(consumoPage<1) consumoPage = 1;
+  const start = (consumoPage-1)*CONSUMO_PAGE_SIZE;
+  const pageRows = rows.slice(start, start+CONSUMO_PAGE_SIZE);
+  const body = document.getElementById('consumoBody');
+  body.innerHTML = pageRows.map(r=>{
+    const periodo = r.pmin===r.pmax ? periodoLabel(r.pmin) : periodoLabel(r.pmin)+' – '+periodoLabel(r.pmax);
+    const tag = r.tipo==='Paciente' ? '<span class="tag emenda">Paciente</span>' : '<span class="tag compras">Consumo Interno</span>';
+    const marcasTxt = r.marcas.length ? ` <span style="color:var(--ink-faint);font-size:11px;" title="${r.marcas.join(', ')}">(${r.marcas.length} marca${r.marcas.length>1?'s':''})</span>` : '';
+    const compradaTxt = r.qtdComprada>0 ? `${fmtInt(r.qtdComprada)} ${r.unCompra}` : '—';
+    const consumidaTxt = `${fmtInt(r.qtdConsumida)} ${r.unConsumo}`;
+    const aviso = r.unidadeDivergente
+      ? `<div class="unit-warning" title="Comprado em &quot;${r.unCompra}&quot; e consumido em &quot;${r.unConsumo}&quot; — unidades diferentes, os números não são diretamente comparáveis.">⚠ unidades diferentes</div>`
+      : '';
+    return `<tr><td>${periodo}</td><td>${r.gen}${marcasTxt}</td><td>${compradaTxt}${aviso}</td><td>${consumidaTxt}</td><td>${tag}</td></tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--ink-faint);padding:30px;">Nenhum dado de consumo carregado ainda. Envie o arquivo na aba Dados &amp; Upload.</td></tr>';
+  document.getElementById('consumoResumo').textContent = `${fmtInt(total)} produto(s)`;
+  document.getElementById('consumoPageLabel').textContent = `Página ${consumoPage} de ${totalPages}`;
+  document.getElementById('consumoPrev').disabled = consumoPage<=1;
+  document.getElementById('consumoNext').disabled = consumoPage>=totalPages;
+}
+
+
+/* ============================================================
+   BATCHES TABLE (Dados view)
+   ============================================================ */
+function renderBatchesTable(){
+  const body = document.getElementById('batchesBody');
+  const rows = BATCHES.slice().sort((a,b)=>a.id-b.id);
+  body.innerHTML = rows.map(b=>{
+    const origem = b.origin==='hist' ? '<span class="tag hist">Histórico</span>' :
+                   b.origin==='consolidado' ? '<span class="tag hist">Importado</span>' : '<span class="tag compras">Mensal</span>';
+    const tipoLabel = b.dataset==='ordens' ? 'Emenda (ordens)' : (b.dataset==='consumo' ? 'Consumo' : b.tipo);
+    const tipo = b.tipo==='Emenda' ? `<span class="tag emenda">${tipoLabel}</span>` : (b.dataset==='consumo' ? `<span class="tag" style="background:var(--line-soft);color:var(--ink-soft);">${tipoLabel}</span>` : `<span class="tag compras">${tipoLabel}</span>`);
+    const periodo = b.periodo ? b.periodo : ((b.minDay!=null && isFinite(b.minDay)) ? fmtPeriodo(b.minDay,b.maxDay) : '—');
+    const added = b.addedAt ? new Date(b.addedAt).toLocaleDateString('pt-BR') : '—';
+    const delBtn = !IS_ADMIN ? '' : `<button class="btn danger" data-del="${b.id}" style="padding:4px 10px;font-size:11px;">Remover</button>`;
+    return `<tr><td>${origem}</td><td>${tipo}</td><td>${b.filename}</td><td>${periodo}</td><td>${fmtInt(b.rows)}</td><td>${added}</td><td>${delBtn}</td></tr>`;
+  }).join('');
+  // Confirmação em 2 cliques, sem usar confirm() do navegador (que fica bloqueado dentro do preview do Claude).
+  body.querySelectorAll('[data-del]').forEach(btn=>{
+    let armed = false;
+    let resetTimer = null;
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      if(!armed){
+        armed = true;
+        btn.textContent = 'Confirmar remoção?';
+        btn.style.background = 'var(--rose)';
+        btn.style.color = '#fff';
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(()=>{
+          armed = false;
+          btn.textContent = 'Remover';
+          btn.style.background = '';
+          btn.style.color = '';
+        }, 3500);
+        return;
+      }
+      clearTimeout(resetTimer);
+      removeBatch(parseInt(btn.dataset.del));
+    });
+  });
+}
+function fmtPeriodo(minDay,maxDay){
+  const d1=dateFromDayIndex(minDay), d2=dateFromDayIndex(maxDay);
+  const f = d=>MONTH_ABBR[d.getMonth()]+'/'+d.getFullYear();
+  return f(d1)===f(d2) ? f(d1) : f(d1)+' – '+f(d2);
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+let toastTimer=null;
+function showToast(msg, isErr){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('err', !!isErr);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 4200);
+}
+
+/* ============================================================
+   CSV EXPORT
+   ============================================================ */
+function exportCsv(){
+  const header = ['id_entrada','nr_nota','data','fornecedor','insumo','categoria','quantidade','valor_negociado','origem'];
+  const lines = [header.join(';')];
+  for(const r of ALL_RECORDS){
+    const d = dateFromDayIndex(r.day);
+    const ds = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+    const esc = s=>'"'+String(s).replace(/"/g,'""')+'"';
+    lines.push([r.i,r.n,ds,esc(r.forn),esc(r.gen),esc(r.cat),r.q,String(r.v).replace('.',','),r.sis].join(';'));
+  }
+  const blob = new Blob(['\uFEFF'+lines.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'painel_compras_dados.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   EXPORTS: Excel e PDF (dados filtrados / tabela unificada)
+   ============================================================ */
+function exportExcel(){
+  if(!LIBS_READY.xlsx || typeof XLSX === 'undefined'){
+    showToast('A biblioteca de Excel não carregou (sem internet?). Tente novamente em instantes.', true);
+    return;
+  }
+  const rows = buildUnifiedRows();
+  if(rows.length===0){ showToast('Nada para exportar no filtro atual.', true); return; }
+  const data = rows.map(r=>({
+    'Data Entrada': fmtDateBR(r.day),
+    'Fornecedor': r.forn,
+    'Nome genérico': r.gen||'—',
+    'Nome comercial': r.prod||'—',
+    'Qtd. comprada': r.qtd!=null?r.qtd:'—',
+    'Valor Negociado / Valor Ordem': r.valor,
+    'Situação / Origem': r.situacao
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Dados');
+  XLSX.writeFile(wb, 'painel_compras_filtrado.xlsx');
+  showToast(`Excel exportado com ${fmtInt(rows.length)} registro(s).`);
+}
+
+function exportAlertasQtdExcel(){
+  if(!LIBS_READY.xlsx || typeof XLSX === 'undefined'){
+    showToast('A biblioteca de Excel não carregou (sem internet?). Tente novamente em instantes.', true);
+    return;
+  }
+  const { mesLabel, alerts } = LAST_ALERTAS_QTD;
+  if(!alerts.length){ showToast('Nenhum alerta de compras pra exportar no momento.', true); return; }
+  const data = alerts.map(a=>({
+    'Insumo': a.produto,
+    'Média mensal histórica (un.)': Math.round(a.avgQty),
+    [`Quantidade comprada em ${mesLabel} (un.)`]: a.latestQty,
+    'Meses considerados na média': a.meses,
+    'Variação (%)': Math.round(a.pct)
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Alertas de compras');
+  XLSX.writeFile(wb, 'alertas_de_compras.xlsx');
+  showToast(`Excel exportado com ${fmtInt(alerts.length)} alerta(s).`);
+}
+
+function exportAlertasPrecoExcel(){
+  if(!LIBS_READY.xlsx || typeof XLSX === 'undefined'){
+    showToast('A biblioteca de Excel não carregou (sem internet?). Tente novamente em instantes.', true);
+    return;
+  }
+  const { mesLabel, alerts } = LAST_ALERTAS_PRECO;
+  if(!alerts.length){ showToast('Nenhum alerta de preço pra exportar no momento.', true); return; }
+  const data = alerts.map(a=>({
+    'Insumo': a.produto,
+    'Preço médio histórico': a.avgPrice,
+    [`Preço em ${mesLabel}`]: a.latestPrice,
+    'Meses considerados na média': a.meses,
+    'Variação (%)': Math.round(a.pct)
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Alertas de preço');
+  XLSX.writeFile(wb, 'alertas_de_preco.xlsx');
+  showToast(`Excel exportado com ${fmtInt(alerts.length)} alerta(s).`);
+}
+
+function pdfHeader(doc, pageW, title, periodo){
+  doc.setFillColor(163,43,36);
+  doc.rect(0,0,pageW,44,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(15);
+  doc.text('Painel de Compras — '+title, 24, 27);
+  doc.setFontSize(9);
+  doc.text(periodo, pageW-24, 27, {align:'right'});
+}
+function pdfFooter(doc, pageW, pageH){
+  doc.setTextColor(163,43,36);
+  doc.setFontSize(8);
+  doc.text('Criador: Edgar Silva — Compras', pageW-16, pageH-10, {align:'right'});
+}
+// Desenha uma linha de cartões de KPI (texto), lidos diretamente dos elementos já renderizados na tela.
+function pdfKpiRow(doc, x, y, w, h, items){
+  const cardW = (w - (items.length-1)*12) / items.length;
+  // calcula quantas linhas o rótulo/valor vão ocupar, para não sobrepor texto quando for longo
+  const labelFS=8.5, valueFS=12.5, subFS=7.5;
+  let maxLabelLines=1, maxValueLines=1;
+  const cache = items.map(it=>{
+    const labelLines = doc.setFontSize(labelFS) && doc.splitTextToSize(String(it.label), cardW-16);
+    const valueLines = doc.setFontSize(valueFS) && doc.splitTextToSize(String(it.value), cardW-16);
+    maxLabelLines = Math.max(maxLabelLines, labelLines.length);
+    maxValueLines = Math.max(maxValueLines, valueLines.length);
+    return {labelLines, valueLines};
+  });
+  const labelBlockH = maxLabelLines*10.5;
+  const valueBlockH = maxValueLines*14.5;
+  const subH = items.some(it=>it.sub) ? 14 : 0;
+  const autoH = 14 + labelBlockH + 6 + valueBlockH + subH;
+  h = Math.max(h, autoH);
+  items.forEach((it,i)=>{
+    const cx = x + i*(cardW+12);
+    doc.setFillColor(255,255,255);
+    doc.setDrawColor(233,217,215);
+    doc.setLineWidth(1);
+    doc.rect(cx, y, cardW, h, 'S');
+    doc.setDrawColor(163,43,36);
+    doc.setLineWidth(2.2);
+    doc.line(cx, y, cx, y+h);
+    doc.setTextColor(107,78,76);
+    doc.setFontSize(labelFS);
+    doc.text(cache[i].labelLines, cx+10, y+14);
+    doc.setTextColor(36,22,21);
+    doc.setFontSize(valueFS);
+    doc.text(cache[i].valueLines, cx+10, y+14+labelBlockH+14);
+    if(it.sub){
+      doc.setTextColor(139,123,120);
+      doc.setFontSize(subFS);
+      doc.text(String(it.sub), cx+10, y+h-8, {maxWidth:cardW-16});
+    }
+  });
+  return h;
+}
+// Distribui os KPIs em uma ou mais linhas (no máximo `perRow` por linha) e devolve a altura total usada.
+function pdfKpiGrid(doc, x, y, w, items, perRow, rowH){
+  rowH = rowH || 54;
+  const rows = [];
+  for(let i=0;i<items.length;i+=perRow) rows.push(items.slice(i,i+perRow));
+  let cursorY = y, total = 0;
+  rows.forEach((rowItems,ri)=>{
+    const usedH = pdfKpiRow(doc, x, cursorY, w, rowH, rowItems);
+    cursorY += usedH + 10;
+    total += usedH + (ri<rows.length-1?10:0);
+  });
+  return total;
+}
+// Converte um canvas (possivelmente com fundo transparente) em JPEG com fundo branco, bem mais leve que PNG.
+function canvasToLightJpeg(canvas, quality){
+  const off = document.createElement('canvas');
+  off.width = canvas.width; off.height = canvas.height;
+  const ctx = off.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,off.width,off.height);
+  ctx.drawImage(canvas, 0, 0);
+  return off.toDataURL('image/jpeg', quality||0.82);
+}
+// Desenha o título do painel e a imagem do gráfico (extraída direto do canvas do Chart.js), preenchendo bem a caixa.
+// Redimensiona o gráfico para a proporção exata da caixa do PDF antes de capturar, e devolve ao tamanho de tela depois.
+async function pdfChartBox(doc, chartId, x, y, w, h, title){
+  doc.setDrawColor(233,217,215);
+  doc.setLineWidth(1);
+  doc.rect(x, y, w, h, 'S');
+  doc.setTextColor(36,22,21);
+  doc.setFontSize(10.5);
+  doc.text(title, x+12, y+18);
+  const chart = charts[chartId];
+  const top = y+26, boxH = h-34, boxW = w-24;
+  if(!chart || !chart.canvas){
+    doc.setTextColor(160,136,134);
+    doc.setFontSize(9);
+    doc.text('Gráfico indisponível', x+16, top+boxH/2);
+    return;
+  }
+  const targetW = Math.round(boxW*2.4), targetH = Math.round(boxH*2.4);
+  chart.resize(targetW, targetH);
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  const canvas = chart.canvas;
+  const ratio = Math.min(boxW/canvas.width, boxH/canvas.height);
+  const drawW = canvas.width*ratio, drawH = canvas.height*ratio;
+  const ix = x + 12 + (boxW-drawW)/2, iy = top + (boxH-drawH)/2;
+  doc.addImage(canvasToLightJpeg(canvas, 0.85), 'JPEG', ix, iy, drawW, drawH);
+  chart.resize(); // volta ao tamanho responsivo normal da tela
+}
+
+async function exportPdf(){
+  if(!LIBS_READY.jspdf || typeof window.jspdf === 'undefined'){
+    showToast('A biblioteca de PDF não carregou (sem internet?). Tente novamente em instantes.', true);
+    return;
+  }
+  if(!LIBS_READY.chart){
+    showToast('Os gráficos não carregaram — não é possível gerar o PDF visual agora.', true);
+    return;
+  }
+  showToast('Gerando PDF do painel…');
+  const originalView = currentView;
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({orientation:'portrait', unit:'pt', format:'a4'});
+    const pageW = doc.internal.pageSize.getWidth();   // ~595pt
+    const pageH = doc.internal.pageSize.getHeight();  // ~842pt
+    const M = 24; // margem lateral
+    const periodo = `Período: ${document.getElementById('filterDateFrom').value.split('-').reverse().join('/')} a ${document.getElementById('filterDateTo').value.split('-').reverse().join('/')}`;
+
+    // --- Capa: resumo executivo ---
+    const items = getFiltered();
+    const ordens = getFilteredOrdens();
+    const totalCompras = items.filter(r=>r.sis==='Compras').reduce((s,r)=>s+r.v,0);
+    const emendaAntiga = ordens.reduce((s,o)=>s+o.v,0);
+    const emendaNova = items.filter(r=>r.sis==='Emenda').reduce((s,r)=>s+r.v,0);
+    const totalGeralNovo = totalCompras + emendaNova;
+    const fornSet = new Set(items.map(r=>r.forn)); ordens.forEach(o=>fornSet.add(o.forn));
+    const notasUnicas = new Set(items.map(r=>r.i+'-'+r.n)).size;
+    const geradoEm = new Date().toLocaleString('pt-BR');
+
+    doc.setFillColor(163,43,36);
+    doc.rect(0,0,pageW,100,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(22);
+    doc.text('Painel de Compras', M, 46);
+    doc.setFontSize(12.5);
+    doc.text('Relatório Executivo', M, 68);
+    doc.setFontSize(9);
+    doc.text(periodo, M, 86);
+    doc.text('Gerado em '+geradoEm, M, 98, {maxWidth:pageW-M*2});
+
+    let capaY = pdfKpiGrid(doc, M, 130, pageW-M*2, [
+      {label:'COMPRAS (valor consolidado do período)', value: fmtBRLfull(totalCompras)},
+      {label:'EMENDA APÓS A ATUALIZAÇÃO DO SISTEMA', value: fmtBRLfull(emendaNova)},
+      {label:'TOTAL GERAL (Compras + Emenda pós-atualização)', value: fmtBRLfull(totalGeralNovo)}
+    ], 3, 58) + 130;
+    capaY = pdfKpiGrid(doc, M, capaY+10, pageW-M*2, [
+      {label:'NOTAS / LANÇAMENTOS', value: fmtInt(notasUnicas)},
+      {label:'FORNECEDORES ATIVOS', value: fmtInt(fornSet.size)},
+      {label:'EMENDA ANTES DA ATUALIZAÇÃO (consulta, congelado)', value: fmtBRLfull(emendaAntiga)}
+    ], 3, 58) + capaY + 10;
+
+    pdfFooter(doc, pageW, pageH);
+
+    // --- Página 1: Visão Geral ---
+    switchView('geral'); await new Promise(r=>setTimeout(r,60));
+    doc.addPage();
+    pdfHeader(doc, pageW, 'Visão Geral', periodo);
+    let y = 58;
+    y += pdfKpiGrid(doc, M, y, pageW-M*2, [
+      {label:'Compras (valor consolidado)', value: document.getElementById('kpiCompras').textContent},
+      {label:'Emenda após a atualização do sistema', value: document.getElementById('kpiEmendaNova').textContent},
+      {label:'Total Geral (Compras + Emenda pós-atualização)', value: document.getElementById('kpiTotalGeralNovo').textContent}
+    ], 3, 50) + 10;
+    y += pdfKpiGrid(doc, M, y, pageW-M*2, [
+      {label:'Notas / lançamentos', value: document.getElementById('kpiLancamentos').textContent},
+      {label:'Ticket médio por nota', value: document.getElementById('kpiTicketMedio').textContent},
+      {label:'Emenda antes da atualização (consulta)', value: document.getElementById('kpiEmenda').textContent}
+    ], 3, 50) + 14;
+    { const botH=pageH-y-16, halfW=(pageW-M*2-14)/2;
+      await pdfChartBox(doc, 'chartCategoriaDonut', M, y, halfW, botH*0.42, 'Gasto por categoria');
+      await pdfChartBox(doc, 'chartOrigemPie', M+halfW+14, y, halfW, botH*0.42, 'Compras × Emenda');
+      await pdfChartBox(doc, 'chartTopInsumosGeral', M, y+botH*0.42+10, pageW-M*2, botH*0.58-10, 'Top 10 insumos (por valor gasto)');
+    }
+    pdfFooter(doc, pageW, pageH);
+
+    // --- Página 2: Análise Mensal ---
+    switchView('analise'); await new Promise(r=>setTimeout(r,60));
+    doc.addPage();
+    pdfHeader(doc, pageW, 'Análise Mensal', periodo);
+    y = 58;
+    y += pdfKpiGrid(doc, M, y, pageW-M*2, [
+      {label:document.getElementById('mediaLabel1').textContent, value: document.getElementById('kpiMedia1').textContent},
+      {label:document.getElementById('mediaLabel2').textContent, value: document.getElementById('kpiMedia2').textContent}
+    ], 2, 50) + 10;
+    y += pdfKpiGrid(doc, M, y, pageW-M*2, [
+      {label:'Mês de maior gasto', value: document.getElementById('kpiMesPico').textContent},
+      {label:'Emenda no período', value: document.getElementById('kpiEmendaPeriodo').textContent}
+    ], 2, 50) + 14;
+    { const botH=pageH-y-16;
+      await pdfChartBox(doc, 'chartEvolucaoCompras', M, y, pageW-M*2, botH*0.54, 'Evolução mensal — Compras');
+      await pdfChartBox(doc, 'chartEvolucaoEmenda', M, y+botH*0.54+10, pageW-M*2, botH*0.46-10, 'Evolução mensal — Emenda');
+    }
+    pdfFooter(doc, pageW, pageH);
+
+    // --- Página 3: Fornecedores ---
+    switchView('fornecedores'); await new Promise(r=>setTimeout(r,60));
+    doc.addPage();
+    pdfHeader(doc, pageW, 'Fornecedores', periodo);
+    y = 58;
+    y += pdfKpiGrid(doc, M, y, pageW-M*2, [
+      {label:'Fornecedores ativos', value: document.getElementById('kpiFornAtivos').textContent},
+      {label:'Gasto médio por fornecedor', value: document.getElementById('kpiMediaForn').textContent}
+    ], 2, 50) + 10;
+    y += pdfKpiGrid(doc, M, y, pageW-M*2, [
+      {label:'Maior fornecedor', value: document.getElementById('kpiMaiorForn').textContent, sub: document.getElementById('kpiMaiorFornValor').textContent},
+      {label:'Concentração — Top 5 fornecedores', value: document.getElementById('kpiConcentracao').textContent}
+    ], 2, 54) + 14;
+    { const botH=pageH-y-16;
+      await pdfChartBox(doc, 'chartTopFornecedores', M, y, pageW-M*2, botH*0.54, 'Top 15 fornecedores (por valor gasto)');
+      await pdfChartBox(doc, 'chartFornMensal', M, y+botH*0.54+10, pageW-M*2, botH*0.46-10, 'Gasto mensal com fornecedores');
+    }
+    pdfFooter(doc, pageW, pageH);
+
+    // --- Página 4: Insumos ---
+    switchView('insumos'); await new Promise(r=>setTimeout(r,60));
+    doc.addPage();
+    pdfHeader(doc, pageW, 'Insumos', periodo);
+    y = 58;
+    y += pdfKpiGrid(doc, M, y, pageW-M*2, [
+      {label:'Insumo de maior gasto', value: document.getElementById('kpiTopInsumo').textContent, sub: document.getElementById('kpiTopInsumoValor').textContent},
+      {label:'Insumos distintos', value: document.getElementById('kpiInsumosDistintos').textContent}
+    ], 2, 54) + 14;
+    { const botH=pageH-y-16, halfW=(pageW-M*2-14)/2;
+      await pdfChartBox(doc, 'chartCategoriaDonut2', M, y, halfW, botH*0.42, 'Distribuição por categoria');
+      await pdfChartBox(doc, 'chartTopInsumos2', M+halfW+14, y, halfW, botH*0.42, 'Top 12 insumos');
+      await pdfChartBox(doc, 'chartCategoriaPorAno', M, y+botH*0.42+10, pageW-M*2, botH*0.58-10, 'Categoria por ano');
+    }
+    pdfFooter(doc, pageW, pageH);
+
+    switchView(originalView);
+    doc.save('painel_compras_dashboard.pdf');
+    showToast('PDF do painel gerado com sucesso.');
+  }catch(err){
+    console.error(err);
+    showToast('Erro ao gerar PDF: '+err.message, true);
+    switchView(originalView);
+  }
+}
+
+
+let selectedTipo = 'Compras';
+
+function wireUploadZone(zoneId, inputId, onFile){
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  zone.addEventListener('click', ()=>input.click());
+  input.addEventListener('change', e=>{ if(e.target.files[0]) onFile(e.target.files[0]); input.value=''; });
+  ['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev, e=>{ e.preventDefault(); zone.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev=>zone.addEventListener(ev, e=>{ e.preventDefault(); zone.classList.remove('drag'); }));
+  zone.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) onFile(f); });
+}
+
+async function handleMensalFile(file){
+  try{
+    if(!LIBS_READY.xlsx || typeof XLSX === 'undefined'){
+      showToast('A biblioteca de leitura de planilhas não carregou (sem internet?). Tente recarregar a página.', true);
+      return;
+    }
+    showToast('Processando arquivo…');
+    const buf = await file.arrayBuffer();
+    const wb = readWorkbookFromArrayBuffer(buf);
+    const sheetName = wb.SheetNames.find(n=>/emenda/i.test(n)) || wb.SheetNames[0];
+    const header = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, raw:true, defval:null})[0] || [];
+    if(looksLikeOrdens(header)){
+      const {records} = parseEmendaOrdens(wb, file.name);
+      await ingestOrdens(records, file.name, 'mensal');
+    } else if(looksLikeItens(header)){
+      const {records} = parseRawBruto(wb, selectedTipo, file.name);
+      await ingestItens(records, selectedTipo, file.name, 'mensal');
+    } else {
+      throw new Error('Não reconheci o formato deste arquivo. Confira se é o arquivo bruto do sistema (item a item) ou o arquivo de ordens de emenda (id_ordem/vl_total_ordem).');
+    }
+  }catch(err){
+    console.error(err);
+    showToast('Erro: '+err.message, true);
+  }
+}
+async function handleHistoricoFile(file){
+  try{
+    if(!LIBS_READY.xlsx || typeof XLSX === 'undefined'){
+      showToast('A biblioteca de leitura de planilhas não carregou (sem internet?). Tente recarregar a página.', true);
+      return;
+    }
+    showToast('Processando planilha…');
+    const buf = await file.arrayBuffer();
+    const wb = readWorkbookFromArrayBuffer(buf);
+    const {records} = parseConsolidado(wb, file.name);
+    const tiposPresentes = new Set(records.map(r=>r.sis));
+    const tipoLabel = tiposPresentes.size>1?'Compras+Emenda':[...tiposPresentes][0]||'Compras';
+    await ingestItens(records, tipoLabel, file.name, 'consolidado');
+  }catch(err){
+    console.error(err);
+    showToast('Erro: '+err.message, true);
+  }
+}
+
+async function handleConsumoFile(file){
+  try{
+    showToast('Processando arquivo de consumo… (pode levar alguns segundos, o arquivo é grande)');
+    const buf = await file.arrayBuffer();
+    // o arquivo vem em ISO-8859-1 (acentos tipo "MANUTEN\xC7\xC3O")
+    const text = new TextDecoder('iso-8859-1').decode(buf);
+    const { records, minPeriodo, maxPeriodo } = parseConsumoTxt(text);
+    await ingestConsumo(records, file.name, minPeriodo, maxPeriodo);
+  }catch(err){
+    console.error(err);
+    showToast('Erro: '+err.message, true);
+  }
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function wireUI(){
+  document.getElementById('nav').addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-view]');
+    if(btn) switchView(btn.dataset.view);
+  });
+
+  document.querySelectorAll('.filter-group').forEach(group=>{
+    const btn = group.querySelector('.filter-btn');
+    const panel = group.querySelector('.filter-panel');
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      document.querySelectorAll('.filter-panel').forEach(p=>{ if(p!==panel) p.classList.remove('open'); });
+      panel.classList.toggle('open');
+    });
+  });
+  document.addEventListener('click', ()=>{ document.querySelectorAll('.filter-panel').forEach(p=>p.classList.remove('open')); });
+
+  document.getElementById('uploadTypeToggle').addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-type]');
+    if(!btn) return;
+    selectedTipo = btn.dataset.type;
+    document.querySelectorAll('#uploadTypeToggle button').forEach(b=>b.classList.toggle('sel', b===btn));
+  });
+
+  wireUploadZone('uploadZoneMensal','fileMensal', handleMensalFile);
+  wireUploadZone('uploadZoneHistorico','fileHistorico', handleHistoricoFile);
+  wireUploadZone('uploadZoneConsumo','fileConsumo', handleConsumoFile);
+
+  document.getElementById('btnExportCsv').addEventListener('click', exportCsv);
+  document.getElementById('btnExportAlertasQtd').addEventListener('click', exportAlertasQtdExcel);
+  document.getElementById('btnExportAlertasPreco').addEventListener('click', exportAlertasPrecoExcel);
+  document.getElementById('btnExportXlsx').addEventListener('click', exportExcel);
+  document.getElementById('btnExportPdf').addEventListener('click', exportPdf);
+
+  document.getElementById('filterDateFrom').addEventListener('change', e=>{
+    FILTERS.dateFrom = dayIndexFromIso(e.target.value);
+    renderCurrentView(); if(currentView==='tabela'){ tablePage=1; renderTabela(); }
+  });
+  document.getElementById('filterDateTo').addEventListener('change', e=>{
+    FILTERS.dateTo = dayIndexFromIso(e.target.value);
+    renderCurrentView(); if(currentView==='tabela'){ tablePage=1; renderTabela(); }
+  });
+
+  document.getElementById('tabelaPrev').addEventListener('click', ()=>{ tablePage--; renderTabela(); });
+  document.getElementById('tabelaNext').addEventListener('click', ()=>{ tablePage++; renderTabela(); });
+  document.getElementById('consumoPrev').addEventListener('click', ()=>{ consumoPage--; renderConsumoTable(); });
+  document.getElementById('consumoNext').addEventListener('click', ()=>{ consumoPage++; renderConsumoTable(); });
+
+  let searchDebounce=null;
+  document.getElementById('tabelaSearch').addEventListener('input', e=>{
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(()=>{
+      tableSearchTerm = e.target.value.trim();
+      tablePage = 1;
+      renderTabela();
+    }, 200);
+  });
+
+  let consumoSearchDebounce=null;
+  document.getElementById('consumoSearch').addEventListener('input', e=>{
+    clearTimeout(consumoSearchDebounce);
+    consumoSearchDebounce = setTimeout(()=>{
+      consumoSearchTerm = e.target.value.trim();
+      consumoPage = 1;
+      renderConsumoTable();
+    }, 200);
+  });
+}
+
+async function init(){
+  try{ wireUI(); }catch(e){ console.error('wireUI failed', e); }
+  await bootAuth();
+}
+init();
+</script>
+</body>
+</html>
