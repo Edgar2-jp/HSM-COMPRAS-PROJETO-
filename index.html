@@ -278,6 +278,7 @@ table.batches tr:last-child td{ border-bottom:none; }
 body.is-admin .admin-only{ display:revert !important; }
 
 </style>
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 </head>
 <body>
@@ -332,6 +333,8 @@ body.is-admin .admin-only{ display:revert !important; }
       <b id="periodoLabel">—</b>
       <span id="totalRowsLabel">0 registros</span>
       <span id="userLabel" style="display:block;margin-top:8px;word-break:break-all;"></span>
+      <span id="refreshLabel" style="display:block;margin-top:6px;"></span>
+      <button class="btn secondary" id="btnRefresh" style="display:none;margin-top:6px;margin-right:6px;padding:4px 10px;font-size:11px;">Atualizar dados</button>
       <button class="btn secondary" id="btnLogout" style="display:none;margin-top:6px;padding:4px 10px;font-size:11px;">Sair</button>
     </div>
   </aside>
@@ -727,6 +730,8 @@ function friendlyError(e){
     return { net:true, text:'Não foi possível conectar ao banco de dados. Verifique sua internet. Se o problema continuar, o projeto Supabase pode estar pausado por inatividade (plano grátis): o administrador precisa clicar em "Restore project" no painel do Supabase.' };
   if(/^5\d\d$/.test(String(status)) || /paused|unavailable|bad gateway|upstream/i.test(msg))
     return { net:true, text:'O banco de dados está indisponível ou pausado no momento. O administrador precisa reativá-lo no painel do Supabase (Restore project) e então você pode tentar de novo.' };
+  if(/jwt expired|invalid jwt|refresh_token|session.*(expired|missing)|not authenticated/i.test(msg) || status===401 || status==='PGRST301')
+    return { auth:true, text:'Sua sessão expirou. Entre novamente.' };
   if(/invalid login|invalid_credentials/i.test(msg)) return { text:'E-mail ou senha incorretos.' };
   if(/email not confirmed/i.test(msg)) return { text:'E-mail ainda não confirmado. Use o link enviado ao seu e-mail.' };
   if(/row-level security|permission denied|42501/i.test(msg)) return { text:'Sem permissão para esta operação.' };
@@ -768,9 +773,12 @@ async function loadPersisted(){
     });
   }
   lastLoadAt = Date.now();
+  const rl = document.getElementById('refreshLabel');
+  if(rl) rl.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 }
 async function persistNewBatch(batchMeta, records){
   if(!IS_ADMIN) throw new Error('Somente o administrador pode enviar lotes.');
+  const dup = BATCHES.some(b=>b.filename===batchMeta.filename && b.dataset===batchMeta.dataset);
   busyWriting = true;
   try{
     const { data, error } = await sb.from('lotes').insert({
@@ -784,6 +792,7 @@ async function persistNewBatch(batchMeta, records){
     batchMeta.addedAt = data.added_at;
     for(const r of records) r.b = data.id;
     BATCHES.push(batchMeta);
+    if(dup) setTimeout(()=>showToast('⚠ Já existia um lote com o nome "'+batchMeta.filename+'". Se foi envio repetido, remova um deles em Lotes carregados — senão os valores contam em dobro.', true), 3500);
   } finally { busyWriting = false; }
 }
 async function removeBatch(id){
@@ -874,10 +883,24 @@ function wireAuthUI(){
   $('statusRetry').addEventListener('click', ()=>{ showOverlay('statusOverlay', false); bootRetry(); });
   $('btnLogout').addEventListener('click', async ()=>{ try{ await sb.auth.signOut(); }catch(e){} location.reload(); });
   // dados mudam em outro navegador (upload/remoção do admin): recarrega ao voltar para a aba
-  document.addEventListener('visibilitychange', async ()=>{
-    if(document.visibilityState!=='visible' || !appStarted || busyWriting || Date.now()-lastLoadAt < 120000) return;
-    try{ await loadPersisted(); rebuildFilterOptions(); renderBatchesTable(); renderCurrentView(); }catch(e){ console.warn('refresh falhou', e); }
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='visible' && appStarted && !busyWriting && Date.now()-lastLoadAt >= 120000) refreshData(true);
   });
+  $('btnRefresh').addEventListener('click', ()=>refreshData(false));
+}
+async function refreshData(silent){
+  if(busyWriting) return;
+  const btn = document.getElementById('btnRefresh');
+  btn.disabled = true; btn.textContent = 'Atualizando…';
+  try{
+    await loadPersisted(); rebuildFilterOptions(); renderBatchesTable(); renderCurrentView();
+    if(!silent) showToast('Dados atualizados.');
+  }catch(e){
+    const fe = friendlyError(e);
+    if(fe.auth){ try{ await sb.auth.signOut(); }catch(_){} showLogin(fe.text); }
+    else if(!silent) showToast(fe.text, true);
+    else console.warn('refresh falhou', e);
+  }finally{ btn.disabled = false; btn.textContent = 'Atualizar dados'; }
 }
 async function bootRetry(){
   try{
@@ -911,13 +934,16 @@ async function startApp(){
   }catch(e){
     console.error('falha ao carregar', e);
     const fe = friendlyError(e);
+    if(fe.auth){ try{ await sb.auth.signOut(); }catch(_){} showLogin(fe.text); return; }
     showStatus(fe.text, true);
     return;
   }
   showOverlay('statusOverlay', false);
   document.body.classList.toggle('is-admin', IS_ADMIN);
-  document.getElementById('userLabel').textContent = USER_EMAIL + (IS_ADMIN ? ' (admin)' : '');
+  document.getElementById('userLabel').innerHTML = '<span style="overflow-wrap:anywhere"></span>' + (IS_ADMIN ? '<br><b>Administrador</b>' : '<br>Somente leitura');
+  document.getElementById('userLabel').firstChild.textContent = USER_EMAIL;
   document.getElementById('btnLogout').style.display = '';
+  document.getElementById('btnRefresh').style.display = '';
   appStarted = true;
   try{ rebuildFilterOptions(); }catch(e){ console.error(e); }
   try{ renderBatchesTable(); }catch(e){ console.error(e); }
