@@ -278,8 +278,9 @@ table.batches tr:last-child td{ border-bottom:none; }
 body.is-admin .admin-only{ display:revert !important; }
 
 </style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://ioephnjmzwlypnvbtlpl.supabase.co; worker-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="loginOverlay" class="ov" style="display:none;">
@@ -594,12 +595,14 @@ const HIST_EPOCH = new Date('2020-01-01T00:00:00');
    ============================================================ */
 let LIBS_READY = { xlsx:false, chart:false, jspdf:false, datalabels:false };
 function loadScriptWithFallback(urls){
+  // cada item: [url, hash SRI]; o navegador recusa o arquivo se o hash não bater
   return new Promise(resolve=>{
     let i = 0;
     function tryNext(){
       if(i>=urls.length){ resolve(false); return; }
       const s = document.createElement('script');
-      s.src = urls[i++];
+      const [url, integrity] = urls[i++];
+      s.src = url; s.integrity = integrity; s.crossOrigin = 'anonymous';
       s.onload = ()=>resolve(true);
       s.onerror = ()=>{ s.remove(); tryNext(); };
       document.head.appendChild(s);
@@ -609,14 +612,20 @@ function loadScriptWithFallback(urls){
 }
 async function loadLibraries(){
   LIBS_READY.xlsx = await loadScriptWithFallback([
-    'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-    'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-    'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
+    ['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+     'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw'],
+    ['https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+     'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw'],
+    ['https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
+     'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw']
   ]);
   LIBS_READY.chart = await loadScriptWithFallback([
-    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js',
-    'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
-    'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.min.js'
+    ['https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+     'sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt'],
+    ['https://unpkg.com/chart.js@4.4.4/dist/chart.umd.js',
+     'sha384-G436+Z2nlA8+PNoeRvWdxKbvOf8E/y+lYxqht2iBwNHTQDV5CJr3+AGVj8fGZi5t'],
+    ['https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js',
+     'sha384-G436+Z2nlA8+PNoeRvWdxKbvOf8E/y+lYxqht2iBwNHTQDV5CJr3+AGVj8fGZi5t']
   ]);
   if(LIBS_READY.chart && window.Chart){
     Chart.defaults.font.family = "Inter";
@@ -624,19 +633,25 @@ async function loadLibraries(){
     Chart.defaults.color = '#57696F';
     Chart.defaults.animation = false; // renderização imediata e estável (tela e exportação)
     LIBS_READY.datalabels = await loadScriptWithFallback([
-      'https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js',
-      'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js',
-      'https://unpkg.com/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js'
-    ]);
+    ['https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js',
+     'sha384-y49Zu59jZHJL/PLKgZPv3k2WI9c0Yp3pWB76V8OBVCb0QBKS8l4Ff3YslzHVX76Y'],
+    ['https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js',
+     'sha384-y49Zu59jZHJL/PLKgZPv3k2WI9c0Yp3pWB76V8OBVCb0QBKS8l4Ff3YslzHVX76Y'],
+    ['https://unpkg.com/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js',
+     'sha384-y49Zu59jZHJL/PLKgZPv3k2WI9c0Yp3pWB76V8OBVCb0QBKS8l4Ff3YslzHVX76Y']
+  ]);
     if(LIBS_READY.datalabels && window.ChartDataLabels){
       Chart.register(ChartDataLabels);
       Chart.defaults.set('plugins.datalabels', { display:false });
     }
   }
   LIBS_READY.jspdf = await loadScriptWithFallback([
-    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-    'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
-    'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js'
+    ['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+     'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk'],
+    ['https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+     'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk'],
+    ['https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js',
+     'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk']
   ]);
 }
 
@@ -815,13 +830,13 @@ async function removeBatch(id){
 }
 
 /* ---- autenticação ---- */
-function loadScriptOnce(url){
-  return new Promise((res, rej)=>{ const s = document.createElement('script'); s.src = url; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+function loadScriptOnce(url, integrity){
+  return new Promise((res, rej)=>{ const s = document.createElement('script'); s.src = url; s.integrity = integrity; s.crossOrigin = 'anonymous'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 }
 async function bootAuth(){
   try{
     if(!window.supabase){
-      try{ await loadScriptOnce('https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'); }catch(e){}
+      try{ await loadScriptOnce('https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js', 'sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o'); }catch(e){}
     }
     if(!window.supabase) throw new Error('failed to fetch');
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
