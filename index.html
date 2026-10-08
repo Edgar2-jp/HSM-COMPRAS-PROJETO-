@@ -407,6 +407,7 @@ tr:hover .pct-badge, tr:hover .tag{ transform:scale(1.06); }
       <label>Senha<input type="password" id="loginPass" autocomplete="current-password" required></label>
       <button class="btn" type="submit">Entrar</button>
       <a href="#" id="linkForgot">Primeiro acesso / esqueci a senha</a>
+      <a href="#" id="linkCancel">Continuar sem entrar</a>
     </form>
     <form id="recoverForm" style="display:none;">
       <label>E-mail liberado<input type="email" id="recoverEmail" required></label>
@@ -451,6 +452,7 @@ tr:hover .pct-badge, tr:hover .tag{ transform:scale(1.06); }
       <span id="userLabel" style="display:block;margin-top:8px;word-break:break-all;"></span>
       <span id="refreshLabel" style="display:block;margin-top:6px;"></span>
       <button class="btn secondary" id="btnRefresh" style="display:none;margin-top:6px;margin-right:6px;padding:4px 10px;font-size:11px;">Atualizar dados</button>
+      <button class="btn secondary" id="btnAdminLogin" style="display:none;margin-top:6px;padding:4px 10px;font-size:11px;">Entrar (administrador)</button>
       <button class="btn secondary" id="btnLogout" style="display:none;margin-top:6px;padding:4px 10px;font-size:11px;">Sair</button>
     </div>
   </aside>
@@ -963,12 +965,12 @@ async function bootAuth(){
   wireAuthUI();
   sb.auth.onAuthStateChange((ev)=>{
     if(ev==='PASSWORD_RECOVERY'){ showOverlay('loginOverlay', true); document.getElementById('loginForm').style.display='none'; document.getElementById('recoverForm').style.display='none'; document.getElementById('newPassForm').style.display=''; }
-    if(ev==='SIGNED_OUT'){ appStarted = false; showLogin(); }
+    if(ev==='SIGNED_OUT'){ appStarted = false; startApp(); }
   });
   try{
     const { data, error } = await sb.auth.getSession();
     if(error) throw error;
-    if(data.session) await startApp(); else showLogin();
+    await startApp();
   }catch(e){
     const fe = friendlyError(e);
     if(fe.net) showStatus(fe.text, true); else showLogin(fe.text);
@@ -990,6 +992,8 @@ function wireAuthUI(){
     }
   });
   $('linkForgot').addEventListener('click', e=>{ e.preventDefault(); showLogin('', 'recover'); });
+  $('linkCancel').addEventListener('click', e=>{ e.preventDefault(); showOverlay('loginOverlay', false); });
+  $('btnAdminLogin').addEventListener('click', ()=>showLogin('', 'login'));
   $('linkBack').addEventListener('click', e=>{ e.preventDefault(); showLogin('', 'login'); });
   $('recoverForm').addEventListener('submit', async ev=>{
     ev.preventDefault();
@@ -1028,7 +1032,7 @@ async function refreshData(silent){
     if(!silent) showToast('Dados atualizados.');
   }catch(e){
     const fe = friendlyError(e);
-    if(fe.auth){ try{ await sb.auth.signOut(); }catch(_){} showLogin(fe.text); }
+    if(fe.auth){ try{ await sb.auth.signOut(); }catch(_){} }
     else if(!silent) showToast(fe.text, true);
     else console.warn('refresh falhou', e);
   }finally{ btn.disabled = false; btn.textContent = 'Atualizar dados'; }
@@ -1037,7 +1041,7 @@ async function bootRetry(){
   try{
     const { data, error } = await sb.auth.getSession();
     if(error) throw error;
-    if(data.session) await startApp(); else showLogin();
+    await startApp();
   }catch(e){ const fe = friendlyError(e); if(fe.net) showStatus(fe.text, true); else showLogin(fe.text); }
 }
 
@@ -1047,33 +1051,30 @@ async function startApp(){
   showStatus('Carregando dados…', false);
   document.getElementById('statusRetry').style.display = 'none';
   try{
-    const { data: u } = await sb.auth.getUser();
-    USER_EMAIL = (u && u.user && u.user.email || '').toLowerCase();
-    const [adm, lei] = await Promise.all([
-      sb.from('admins').select('email').maybeSingle(),
-      sb.from('leitores').select('email').maybeSingle()
-    ]);
-    if(adm.error) throw adm.error;
-    if(lei.error) throw lei.error;
-    IS_ADMIN = !!adm.data;
-    if(!IS_ADMIN && !lei.data){
-      await sb.auth.signOut();
-      showLogin('Este e-mail não está liberado para acessar o painel. Peça ao administrador.');
-      return;
+    const { data: ss } = await sb.auth.getSession();
+    const user = ss && ss.session && ss.session.user;
+    USER_EMAIL = user ? (user.email || '').toLowerCase() : '';
+    IS_ADMIN = false;
+    if(user){
+      const adm = await sb.from('admins').select('email').maybeSingle();
+      if(adm.error) throw adm.error;
+      IS_ADMIN = !!adm.data;
     }
     await loadPersisted();
   }catch(e){
     console.error('falha ao carregar', e);
     const fe = friendlyError(e);
-    if(fe.auth){ try{ await sb.auth.signOut(); }catch(_){} showLogin(fe.text); return; }
+    if(fe.auth){ try{ await sb.auth.signOut(); }catch(_){} return; }
+    if(!USER_EMAIL && /row-level security|permission denied|42501/i.test(String((e&&e.message)||e))){ showLogin('Acesso público ainda não liberado no banco. Entre como administrador.'); return; }
     showStatus(fe.text, true);
     return;
   }
   showOverlay('statusOverlay', false);
   document.body.classList.toggle('is-admin', IS_ADMIN);
-  document.getElementById('userLabel').innerHTML = '<span style="overflow-wrap:anywhere"></span>' + (IS_ADMIN ? '<br><b>Administrador</b>' : '<br>Somente leitura');
+  document.getElementById('userLabel').innerHTML = '<span style="overflow-wrap:anywhere"></span>' + (IS_ADMIN ? '<br><b>Administrador</b>' : (USER_EMAIL ? '<br>Somente leitura' : '<b>Acesso público</b>'));
   document.getElementById('userLabel').firstChild.textContent = USER_EMAIL;
-  document.getElementById('btnLogout').style.display = '';
+  document.getElementById('btnLogout').style.display = USER_EMAIL ? '' : 'none';
+  document.getElementById('btnAdminLogin').style.display = USER_EMAIL ? 'none' : '';
   document.getElementById('btnRefresh').style.display = '';
   appStarted = true;
   try{ rebuildFilterOptions(); }catch(e){ console.error(e); }
