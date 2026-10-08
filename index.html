@@ -277,8 +277,123 @@ table.batches tr:last-child td{ border-bottom:none; }
 .admin-only{ display:none !important; }
 body.is-admin .admin-only{ display:revert !important; }
 
+/* ============================================================
+   ACABAMENTO VISUAL — animações, foco, rolagem, microinterações
+   (tudo respeita prefers-reduced-motion; nada altera dados ou lógica)
+   ============================================================ */
+:root{ --ease:cubic-bezier(.22,.61,.36,1); --ring:0 0 0 3px rgba(163,43,36,.22); }
+html{ scroll-behavior:smooth; }
+@keyframes fadeUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+@keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes popIn{ from{ opacity:0; transform:translateY(14px) scale(.97); } to{ opacity:1; transform:none; } }
+@keyframes shimmer{ 0%{ background-position:-200% 0; } 100%{ background-position:200% 0; } }
+@keyframes pulseSoft{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
+
+/* troca de aba: entrada suave, com os cartões entrando em cascata */
+.view.active{ animation:fadeIn .28s var(--ease) both; }
+.view.active .kpi, .view.active .panel, .view.active .section-note, .view.active .upload-zone{ animation:fadeUp .46s var(--ease) both; }
+.view.active > *:nth-child(2) .kpi:nth-child(1), .view.active .kpi:nth-child(1){ animation-delay:.02s; }
+.view.active .kpi:nth-child(2){ animation-delay:.07s; } .view.active .kpi:nth-child(3){ animation-delay:.12s; }
+.view.active .kpi:nth-child(4){ animation-delay:.17s; } .view.active .kpi:nth-child(5){ animation-delay:.22s; }
+.view.active .kpi:nth-child(6){ animation-delay:.27s; }
+.view.active .panel:nth-child(1){ animation-delay:.10s; } .view.active .panel:nth-child(2){ animation-delay:.16s; }
+.view.active .panel:nth-child(3){ animation-delay:.22s; } .view.active .panel:nth-child(4){ animation-delay:.28s; }
+.view.active .panel:nth-child(n+5){ animation-delay:.32s; }
+
+/* cartões e painéis */
+.kpi{ transition:box-shadow .25s var(--ease), transform .25s var(--ease), border-color .25s var(--ease); }
+.kpi:hover{ transform:translateY(-3px); }
+.panel{ transition:box-shadow .25s var(--ease), transform .25s var(--ease); }
+.panel:hover{ transform:translateY(-1px); }
+.kpi .value{ letter-spacing:-.01em; }
+
+/* navegação lateral */
+.nav button{ transition:background .2s var(--ease), color .2s var(--ease), padding-left .2s var(--ease); }
+.nav button:hover{ padding-left:17px; }
+.nav button.active{ box-shadow:0 2px 8px rgba(0,0,0,.18); }
+.nav button.active::before{ animation:fadeIn .3s var(--ease) both; }
+.nav button svg{ transition:transform .25s var(--ease), opacity .2s; }
+.nav button:hover svg{ transform:scale(1.12); }
+.brand-logo{ transition:transform .4s var(--ease); }
+.brand:hover .brand-logo{ transform:scale(1.06) rotate(-2deg); }
+
+/* botões, filtros e chips */
+.btn, .filter-btn, .quick-chips button, .pagination button, .type-toggle button{
+  transition:background .18s var(--ease), border-color .18s var(--ease), color .18s var(--ease), transform .12s var(--ease), box-shadow .18s var(--ease);
+}
+.btn:not(:disabled):hover{ box-shadow:0 4px 12px rgba(110,27,22,.25); transform:translateY(-1px); }
+.btn:not(:disabled):active, .quick-chips button:active, .pagination button:active{ transform:translateY(0) scale(.97); box-shadow:none; }
+.btn:disabled{ cursor:not-allowed; }
+.filter-panel{ transform-origin:top left; }
+.filter-panel.open{ animation:popIn .18s var(--ease) both; }
+.filter-btn .count{ transition:transform .2s var(--ease); }
+.filter-btn:hover .count{ transform:scale(1.1); }
+
+/* foco acessível (teclado) */
+:focus{ outline:none; }
+:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; border-radius:4px; }
+input:focus-visible, select:focus-visible{ outline:none; border-color:var(--teal); box-shadow:var(--ring); }
+.ov-card input:focus, .search-box input:focus, .date-range input:focus{ border-color:var(--teal); box-shadow:var(--ring); outline:none; }
+input, .filter-btn, .btn{ font-family:inherit; }
+.ov-card input, .search-box input, .date-range input[type=date]{ transition:border-color .18s, box-shadow .18s; }
+
+/* tabelas */
+table.detail tbody tr, table.alerts tbody tr, table.batches tbody tr{ transition:background .15s var(--ease); }
+table.detail th, table.alerts th, table.batches th{ font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+table.detail tbody tr:nth-child(even){ background:rgba(247,241,240,.45); }
+table.detail tbody tr:hover{ background:var(--teal-pale); }
+.table-scroll{ box-shadow:inset 0 -12px 12px -12px rgba(36,22,21,.12); }
+.pct-badge, .tag, .delta-badge{ transition:transform .18s var(--ease); }
+tr:hover .pct-badge, tr:hover .tag{ transform:scale(1.06); }
+
+/* barras de rolagem discretas */
+*{ scrollbar-width:thin; scrollbar-color:#D9BDB9 transparent; }
+::-webkit-scrollbar{ width:9px; height:9px; }
+::-webkit-scrollbar-thumb{ background:#D9BDB9; border-radius:8px; border:2px solid transparent; background-clip:content-box; }
+::-webkit-scrollbar-thumb:hover{ background:#C29A94; background-clip:content-box; border:2px solid transparent; }
+
+/* upload */
+.upload-zone{ transition:border-color .2s var(--ease), background .2s var(--ease), transform .2s var(--ease), box-shadow .2s var(--ease); }
+.upload-zone:hover{ transform:translateY(-2px); box-shadow:var(--shadow-hover); }
+.upload-zone.drag{ transform:scale(1.015); border-style:solid; box-shadow:0 0 0 4px rgba(163,43,36,.12); }
+
+/* login / carregamento */
+.ov{ background:radial-gradient(1100px 600px at 20% 0%, #FBEDEB 0%, var(--bg) 55%, #F1E3E1 100%); animation:fadeIn .35s var(--ease) both; }
+.ov-card{ animation:popIn .5s var(--ease) both; border-top:4px solid var(--teal); box-shadow:0 20px 50px rgba(110,27,22,.14), 0 2px 6px rgba(36,22,21,.06); }
+.ov-card .kicker{ font-size:11px; letter-spacing:.14em; font-weight:700; color:var(--teal); }
+.ov-card h2{ font-size:26px; }
+#statusText::before{ content:''; display:inline-block; width:14px; height:14px; margin-right:9px; vertical-align:-2px;
+  border:2px solid var(--line); border-top-color:var(--teal); border-radius:50%; animation:spin .75s linear infinite; }
+#statusText.err::before{ display:none; }
+.ov-msg:empty{ display:none; }
+.ov-msg{ animation:fadeUp .3s var(--ease) both; }
+
+/* aviso (toast) */
+.toast{ border-left:4px solid var(--gold); transition:opacity .3s var(--ease), transform .35s var(--ease); transform:translateY(14px) scale(.98); }
+.toast.show{ transform:none; }
+.toast.err{ border-left-color:#E8A59B; }
+
+/* dica de valor */
+.val-tip:hover::after{ animation:fadeIn .15s var(--ease) both; }
+
+/* carregando dados: esqueleto nos números ainda vazios */
+.kpi .value:empty, .kpi .value.skeleton{ color:transparent; border-radius:4px; min-width:90px; min-height:1em;
+  background:linear-gradient(90deg,#F2E7E5 25%,#FBF4F3 50%,#F2E7E5 75%); background-size:200% 100%; animation:shimmer 1.4s linear infinite; }
+
+/* impressão limpa */
+@media print{
+  .sidebar, .topbar .filters, .toast, .credit-tag, .ov{ display:none !important; }
+  .view.active, .view.active .kpi, .view.active .panel{ animation:none !important; }
+  .panel, .kpi{ box-shadow:none; break-inside:avoid; }
+}
+
+/* quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
+}
 </style>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://ioephnjmzwlypnvbtlpl.supabase.co; worker-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%236E1B16%27/%3E%3Cpath d=%27M16 5c1 4 6 7 6 13a6 6 0 0 1-12 0c0-3 2-4 3-7 1 2 2 2 3 0z%27 fill=%27%23fff%27/%3E%3C/svg%3E">
 <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
 </head>
@@ -755,6 +870,7 @@ function friendlyError(e){
 function showOverlay(id, show){ const el = document.getElementById(id); if(el) el.style.display = show ? 'flex' : 'none'; }
 function showStatus(text, withRetry){
   document.getElementById('statusText').textContent = text;
+  document.getElementById('statusText').classList.toggle('err', !!withRetry);
   document.getElementById('statusRetry').style.display = withRetry ? '' : 'none';
   showOverlay('statusOverlay', true);
 }
@@ -2954,6 +3070,43 @@ async function init(){
   await bootAuth();
 }
 init();
+
+/* ---- acabamento: contagem animada dos números dos cartões (KPIs) ---- */
+(function(){
+  if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const NUM = /^(\D*?)(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d+))?(\D*)$/;
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  function animate(el, text){
+    const m = NUM.exec(text);
+    if(!m) return;
+    const dec = m[3] ? m[3].length : 0;
+    const target = parseFloat(m[2].replace(/\./g,'') + (dec ? '.' + m[3] : ''));
+    if(!isFinite(target) || target === 0) return;
+    const t0 = performance.now(), dur = 750;
+    const fmt = v => v.toLocaleString('pt-BR', { minimumFractionDigits:dec, maximumFractionDigits:dec });
+    el.dataset.cu = text;
+    (function step(now){
+      if(el.dataset.cu !== text) return;            // um valor mais novo assumiu
+      const k = Math.min(1, (now - t0) / dur);
+      const out = k >= 1 ? text : m[1] + fmt(target * easeOut(k)) + m[4];
+      el.dataset.cuAnim = out;                       // evita o observador reagir à própria escrita
+      el.textContent = out;
+      if(k < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+  const mo = new MutationObserver(list=>{
+    for(const mu of list){
+      const el = mu.target.nodeType === 1 ? mu.target : mu.target.parentElement;
+      if(!el || !el.matches || !el.matches('.kpi .value')) continue;
+      const text = el.textContent;
+      if(el.dataset.cu === text || el.dataset.cuAnim === text) continue;
+      el.dataset.cuAnim = text;
+      animate(el, text);
+    }
+  });
+  function arm(){ mo.observe(document.body, { childList:true, characterData:true, subtree:true }); }
+  if(document.body) arm(); else document.addEventListener('DOMContentLoaded', arm);
+})();
 </script>
 </body>
 </html>
