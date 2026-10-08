@@ -8,5 +8,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          curl -fsS -X POST "https://mjjpfomgxthzjtqzzfqs.supabase.co/rest/v1/rpc/ping" \
-            -H "apikey: sb_publishable_UhlEoBQnKhZxNQWUnl8bFA_sGFnKzs4" -H "Content-Type: application/json" -d '{}'
+          curl -fsS -X POST "https://ioephnjmzwlypnvbtlpl.supabase.co/rest/v1/rpc/ping" \
+            -H "apikey: sb_publishable_Sg7W6kyYtI_ZkCztA18EWw_HwPBpVwt" -H "Content-Type: application/json" -d '{}'

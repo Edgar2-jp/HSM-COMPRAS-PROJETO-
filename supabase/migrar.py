@@ -13,8 +13,8 @@ import getpass, json, os, re, sys, urllib.request, urllib.error
 from datetime import date
 from decimal import Decimal as D
 
-URL = os.environ.get("SUPABASE_URL", "https://mjjpfomgxthzjtqzzfqs.supabase.co")
-KEY = os.environ.get("SUPABASE_KEY", "sb_publishable_UhlEoBQnKhZxNQWUnl8bFA_sGFnKzs4")  # chave PÚBLICA
+URL = os.environ.get("SUPABASE_URL", "https://ioephnjmzwlypnvbtlpl.supabase.co")
+KEY = os.environ.get("SUPABASE_KEY", "sb_publishable_Sg7W6kyYtI_ZkCztA18EWw_HwPBpVwt")  # chave PÚBLICA
 
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 dry, reload_ = "--dry-run" in sys.argv, "--recarregar" in sys.argv

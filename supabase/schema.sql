@@ -1,4 +1,4 @@
--- Esquema do Painel de Compras (já aplicado no projeto hsm-compras). Referência / recriação.
+-- Esquema do Painel de Compras (já aplicado no projeto hsm-compras-painel). Referência / recriação.
 create table public.leitores (email text primary key check (email = lower(email)));
 create table public.admins   (email text primary key check (email = lower(email)));
 alter table public.leitores enable row level security;
