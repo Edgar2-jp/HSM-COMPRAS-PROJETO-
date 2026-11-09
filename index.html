@@ -706,11 +706,11 @@ tr:hover .pct-badge, tr:hover .tag{ transform:scale(1.06); }
           </div>
           <div class="panel admin-only">
             <h3>Controle de Consumo (mensal)</h3>
-            <p style="font-size:12.5px;color:var(--ink-soft);margin-top:0;">Envie o arquivo "Paciente e Consumo" (.txt, separado por ;) exportado do sistema todo mês. A ferramenta soma a quantidade consumida por produto e cruza com a quantidade comprada.</p>
+            <p style="font-size:12.5px;color:var(--ink-soft);margin-top:0;">Envie todo mês a planilha de consumo em <b>Excel (.xls / .xlsx)</b> — o relatório de saída de materiais. A ferramenta soma a quantidade consumida por produto e cruza com a quantidade comprada. (O .txt "Paciente e Consumo" antigo também continua aceito.)</p>
             <div class="upload-zone" id="uploadZoneConsumo">
               <h4>Arraste o arquivo de consumo aqui</h4>
-              <p>ou clique para selecionar (.txt)</p>
-              <input type="file" id="fileConsumo" accept=".txt" style="display:none;">
+              <p>ou clique para selecionar (.xls / .xlsx)</p>
+              <input type="file" id="fileConsumo" accept=".xls,.xlsx,.txt" style="display:none;">
             </div>
           </div>
         </div>
@@ -1406,52 +1406,101 @@ function parseConsumoTxt(text){
     if(!(col in idx)) throw new Error('Coluna "'+col+'" não encontrada — confira se este é o arquivo de Paciente e Consumo.');
   }
   const hasUnidade = 'NM_UNIDADE' in idx;
-  // agrega em memória por (generico normalizado + tipo) — marcas/comerciais diferentes do
-  // mesmo genérico entram juntas na mesma linha, e cada unidade de medida usada é somada à parte
-  // (um mesmo genérico pode ser consumido em "gts" e comprado em "fr", por exemplo — não dá pra
-  // somar direto, então guardamos as duas pra poder avisar na hora de montar a tabela).
-  const agg = new Map(); // key -> {gen,marcas:Set,tipo,qty,pmin,pmax,unidades:{un:qty}}
-  const norm = s => String(s||'').trim().toLowerCase();
-  let minPeriodo=null, maxPeriodo=null;
-  const maxColNeeded = Math.max(idx.NM_TIPO, idx.NM_COMERCIAL, idx.NM_GENERICO, idx.QT_ITEM, idx.PERIODO, hasUnidade?idx.NM_UNIDADE:0);
+  const hasUnidadeCol = hasUnidade;
+  const ag = consumoAggregator();
+  const maxColNeeded = Math.max(idx.NM_TIPO, idx.NM_COMERCIAL, idx.NM_GENERICO, idx.QT_ITEM, idx.PERIODO, hasUnidadeCol?idx.NM_UNIDADE:0);
   for(let li=1; li<lines.length; li++){
     const line = lines[li];
     if(!line) continue;
     const parts = line.split(';');
     if(parts.length <= maxColNeeded) continue;
-    let tipoRaw = (parts[idx.NM_TIPO]||'').trim();
+    const tipoRaw = (parts[idx.NM_TIPO]||'').trim();
     const tipo = /paciente/i.test(tipoRaw) ? 'Paciente' : (tipoRaw || 'Consumo Interno');
-    let gen = (parts[idx.NM_GENERICO]||'').trim();
-    let com = (parts[idx.NM_COMERCIAL]||'').trim();
-    if(!gen && !com) continue;
-    if(!gen) gen = com;
-    if(!com) com = gen;
-    const qtyRaw = (parts[idx.QT_ITEM]||'0').replace(',', '.');
-    const qty = parseFloat(qtyRaw);
-    if(isNaN(qty)) continue;
-    const periodo = (parts[idx.PERIODO]||'').trim();
-    const un = hasUnidade ? (parts[idx.NM_UNIDADE]||'').trim().toLowerCase() || '—' : '—';
-    if(periodo){
-      if(!minPeriodo || periodo<minPeriodo) minPeriodo = periodo;
-      if(!maxPeriodo || periodo>maxPeriodo) maxPeriodo = periodo;
-    }
-    const key = norm(gen)+'|'+tipo;
-    let e = agg.get(key);
-    if(!e){ e = { gen, marcas:new Set(), tipo, qty:0, pmin:periodo||null, pmax:periodo||null, unidades:{} }; agg.set(key, e); }
-    e.qty += qty;
-    e.marcas.add(com);
-    e.unidades[un] = (e.unidades[un]||0) + qty;
-    if(periodo){
-      if(!e.pmin || periodo<e.pmin) e.pmin = periodo;
-      if(!e.pmax || periodo>e.pmax) e.pmax = periodo;
-    }
+    const qty = parseFloat((parts[idx.QT_ITEM]||'0').replace(',', '.'));
+    const un = hasUnidadeCol ? (parts[idx.NM_UNIDADE]||'').trim().toLowerCase() || '—' : '—';
+    ag.add(tipo, parts[idx.NM_GENERICO], parts[idx.NM_COMERCIAL], qty, (parts[idx.PERIODO]||'').trim(), un);
   }
-  const records = [...agg.values()].map(e=>({
-    gen:e.gen, marcas:[...e.marcas].sort(), tipo:e.tipo, qty:Math.round(e.qty*100)/100,
-    pmin:e.pmin, pmax:e.pmax, unidades:e.unidades, b:null
-  }));
-  if(records.length===0) throw new Error('Nenhum registro válido encontrado no arquivo de consumo.');
-  return { records, minPeriodo, maxPeriodo };
+  return ag.result();
+}
+
+/* Agregador de consumo — usado pelo .txt e pelo Excel. Agrupa por (nome genérico + tipo de saída):
+   marcas/nomes comerciais diferentes do mesmo genérico entram juntos, e cada unidade de medida é
+   somada à parte (um genérico pode ser consumido em "gts" e comprado em "fr" — não dá pra somar direto). */
+function consumoAggregator(){
+  const agg = new Map(); // key -> {gen,marcas:Set,tipo,qty,pmin,pmax,unidades:{un:qty}}
+  const norm = s => String(s||'').trim().toLowerCase();
+  let minPeriodo=null, maxPeriodo=null;
+  return {
+    add(tipo, genRaw, comRaw, qty, periodo, un){
+      let gen = String(genRaw||'').trim(), com = String(comRaw||'').trim();
+      if(!gen && !com) return;
+      if(!gen) gen = com;
+      if(!com) com = gen;
+      if(typeof qty!=='number' || isNaN(qty)) return;
+      periodo = periodo || '';
+      un = un || '—';
+      if(periodo){
+        if(!minPeriodo || periodo<minPeriodo) minPeriodo = periodo;
+        if(!maxPeriodo || periodo>maxPeriodo) maxPeriodo = periodo;
+      }
+      const key = norm(gen)+'|'+tipo;
+      let e = agg.get(key);
+      if(!e){ e = { gen, marcas:new Set(), tipo, qty:0, pmin:periodo||null, pmax:periodo||null, unidades:{} }; agg.set(key, e); }
+      e.qty += qty;
+      e.marcas.add(com);
+      e.unidades[un] = (e.unidades[un]||0) + qty;
+      if(periodo){
+        if(!e.pmin || periodo<e.pmin) e.pmin = periodo;
+        if(!e.pmax || periodo>e.pmax) e.pmax = periodo;
+      }
+    },
+    result(){
+      const records = [...agg.values()].map(e=>({
+        gen:e.gen, marcas:[...e.marcas].sort(), tipo:e.tipo, qty:Math.round(e.qty*100)/100,
+        pmin:e.pmin, pmax:e.pmax, unidades:e.unidades, b:null
+      }));
+      if(records.length===0) throw new Error('Nenhum registro válido encontrado no arquivo de consumo.');
+      return { records, minPeriodo, maxPeriodo };
+    }
+  };
+}
+
+/* ============================================================
+   PARSE CONSUMO EM EXCEL (.xls/.xlsx — relatório "materiais": saída de materiais por paciente)
+   Colunas: datasaida (dd/mm/aaaa), nm_produto (= nome genérico, o mesmo das compras),
+   nm_comercial (marca), nm_unidade, quant, nm_paciente / id_paciente.
+   Esse relatório não traz coluna de tipo: saída com paciente = "Paciente"; sem paciente = "Consumo Interno".
+   ============================================================ */
+function looksLikeConsumoExcel(header){
+  return findCol(header,['datasaida'])>=0 && findCol(header,['quant'])>=0 && findCol(header,['nm_produto'])>=0;
+}
+function parseConsumoExcel(wb){
+  let aoa = null;
+  for(const name of wb.SheetNames){
+    const a = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:null});
+    if(a.length>=2 && looksLikeConsumoExcel(a[0])){ aoa = a; break; }
+  }
+  if(!aoa) throw new Error('Não reconheci a planilha de consumo — esperava as colunas datasaida, nm_produto e quant.');
+  const h = aoa[0];
+  const col = {
+    dt: findCol(h,['datasaida']), qt: findCol(h,['quant']), gen: findCol(h,['nm_produto']),
+    com: findCol(h,['nm_comercial']), un: findCol(h,['nm_unidade']),
+    pac: findCol(h,['nm_paciente']), idPac: findCol(h,['id_paciente'])
+  };
+  const ag = consumoAggregator();
+  for(let r=1;r<aoa.length;r++){
+    const row = aoa[r];
+    if(!row || row.every(c=>c===null||c==='')) continue;
+    const temPaciente = (col.pac>=0 && String(row[col.pac]||'').trim()!=='') || (col.idPac>=0 && !!row[col.idPac]);
+    const tipo = temPaciente ? 'Paciente' : 'Consumo Interno';
+    const rawQ = row[col.qt];
+    const qty = typeof rawQ==='number' ? rawQ : parseFloat(String(rawQ==null?'':rawQ).replace(',', '.'));
+    const d = excelSerialToDate(row[col.dt]);
+    const periodo = (d && !isNaN(d.getTime())) ? String(d.getFullYear())+String(d.getMonth()+1).padStart(2,'0') : '';
+    const un = col.un>=0 ? String(row[col.un]||'').trim().toLowerCase() || '—' : '—';
+    ag.add(tipo, row[col.gen], col.com>=0 ? row[col.com] : '', qty, periodo, un);
+  }
+  return ag.result();
 }
 
 function dedupeKey(r){ return r.i+'|'+r.n+'|'+r.gen+'|'+r.q+'|'+r.v; }
@@ -1511,6 +1560,7 @@ async function ingestOrdens(records, filename, origin){
 
 async function ingestConsumo(records, filename, minPeriodo, maxPeriodo){
   const fresh = records;
+  const fmtP = p => /^\d{6}$/.test(p) ? p.slice(0,4)+'-'+p.slice(4) : p;
   if(fresh.length===0){
     showToast('Nenhum registro de consumo encontrado neste arquivo.', true);
     return;
@@ -1518,7 +1568,7 @@ async function ingestConsumo(records, filename, minPeriodo, maxPeriodo){
   const batchMeta = {
     id: null, dataset:'consumo', origin:'mensal', tipo:'Consumo', filename,
     addedAt: new Date().toISOString(), rows: fresh.length, minDay:null, maxDay:null,
-    periodo: (minPeriodo && maxPeriodo) ? (minPeriodo===maxPeriodo?minPeriodo:minPeriodo+' a '+maxPeriodo) : null
+    periodo: (minPeriodo && maxPeriodo) ? (minPeriodo===maxPeriodo?fmtP(minPeriodo):fmtP(minPeriodo)+' a '+fmtP(maxPeriodo)) : null
   };
   await persistNewBatch(batchMeta, fresh);
   ALL_CONSUMO.push(...fresh);
@@ -3014,7 +3064,10 @@ async function handleMensalFile(file){
     const wb = readWorkbookFromArrayBuffer(buf);
     const sheetName = wb.SheetNames.find(n=>/emenda/i.test(n)) || wb.SheetNames[0];
     const header = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, raw:true, defval:null})[0] || [];
-    if(looksLikeOrdens(header)){
+    if(looksLikeConsumoExcel(header)){
+      const p = parseConsumoExcel(wb);
+      await ingestConsumo(p.records, file.name, p.minPeriodo, p.maxPeriodo);
+    } else if(looksLikeOrdens(header)){
       const {records} = parseEmendaOrdens(wb, file.name);
       await ingestOrdens(records, file.name, 'mensal');
     } else if(looksLikeItens(header)){
@@ -3051,10 +3104,18 @@ async function handleConsumoFile(file){
   try{
     showToast('Processando arquivo de consumo… (pode levar alguns segundos, o arquivo é grande)');
     const buf = await file.arrayBuffer();
-    // o arquivo vem em ISO-8859-1 (acentos tipo "MANUTEN\xC7\xC3O")
-    const text = new TextDecoder('iso-8859-1').decode(buf);
-    const { records, minPeriodo, maxPeriodo } = parseConsumoTxt(text);
-    await ingestConsumo(records, file.name, minPeriodo, maxPeriodo);
+    let parsed;
+    if(/\.(xlsx?|xlsm)$/i.test(file.name)){
+      if(!LIBS_READY.xlsx || typeof XLSX === 'undefined'){
+        showToast('A biblioteca de leitura de planilhas não carregou (sem internet?). Tente recarregar a página.', true);
+        return;
+      }
+      parsed = parseConsumoExcel(readWorkbookFromArrayBuffer(buf));
+    } else {
+      // .txt antigo: vem em ISO-8859-1 (acentos tipo "MANUTEN\xC7\xC3O")
+      parsed = parseConsumoTxt(new TextDecoder('iso-8859-1').decode(buf));
+    }
+    await ingestConsumo(parsed.records, file.name, parsed.minPeriodo, parsed.maxPeriodo);
   }catch(err){
     console.error(err);
     showToast('Erro: '+err.message, true);

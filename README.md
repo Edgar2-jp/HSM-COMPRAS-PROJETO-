@@ -6,6 +6,7 @@ A segurança é feita pela **RLS do banco** — a tela só esconde botões por c
 
 ## Subir um lote novo (admin)
 Entre no painel → aba **Dados** → arraste o arquivo do mês (bruto Compras/Emenda, base consolidada ou consumo `.txt`).
+**Consumo mensal:** envie direto o Excel (`.xls`/`.xlsx`) do relatório de saída de materiais no quadro "Controle de Consumo" — o painel agrega por produto (coluna `nm_produto`) e separa Paciente × Consumo Interno (linha sem paciente = interno). O `.txt` antigo ainda é aceito.
 Para remover: **Remover** → **Confirmar remoção?** (2 cliques). Outros usuários veem a mudança ao reabrir/voltar à aba.
 
 ## Liberar / bloquear um e-mail
